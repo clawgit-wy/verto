@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.env.Environment;
 
 import java.net.InetAddress;
@@ -23,7 +24,8 @@ import java.util.Map;
 */
 @Slf4j
 @SpringBootApplication(exclude = MongoAutoConfiguration.class)
-@ImportAutoConfiguration(JustAuthAutoConfiguration.class)  // spring boot 3.x justauth 兼容性处理
+@ImportAutoConfiguration(JustAuthAutoConfiguration.class)
+@ComponentScan(basePackages = {"org.jeecg", "org.jeecg.modules.feplatform"})
 public class JeecgSystemApplication extends SpringBootServletInitializer {
 
     @Override
