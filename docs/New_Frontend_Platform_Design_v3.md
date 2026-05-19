@@ -437,6 +437,606 @@ CREATE TABLE `fe_team` (
 
 ---
 
+### 3.2.4 前端代码模板配置中心
+
+**功能描述**：提供在线配置前端项目模板的能力，支持移动端/PC端选择、模块组合、技术栈配置，自动生成标准化的前端项目脚手架，并支持一键推送到 GitLab 或下载到本地。
+
+**核心价值**：
+- **统一标准**：所有新项目基于统一模板，确保代码风格、目录结构、配置规范一致
+- **快速启动**：从配置到可用项目仅需 5 分钟，大幅缩短项目初始化时间
+- **灵活组合**：支持按需选择功能模块（路由、状态管理、API层、UI组件库等）
+- **多端支持**：内置移动端和 PC 端两种模板，适配不同业务场景
+- **CI/CD 集成**：自动配置 Jenkins 流水线，实现开箱即用的持续集成
+
+**数据模型**：
+
+```sql
+CREATE TABLE `fe_template` (
+  `id` varchar(36) NOT NULL COMMENT '主键ID',
+  `template_name` varchar(100) NOT NULL COMMENT '模板名称',
+  `template_code` varchar(50) NOT NULL COMMENT '模板编码(唯一标识)',
+  `template_type` varchar(20) NOT NULL COMMENT '模板类型: mobile=移动端, pc=PC端, h5=H5',
+  `description` text COMMENT '模板描述',
+  `framework` varchar(50) NOT NULL COMMENT '前端框架: Vue3, React, Angular',
+  `build_tool` varchar(50) NOT NULL COMMENT '构建工具: Vite, Webpack',
+  `ui_library` varchar(50) COMMENT 'UI组件库: AntDesignVue, ElementPlus, Vant',
+  `language` varchar(20) DEFAULT 'TypeScript' COMMENT '开发语言: TypeScript, JavaScript',
+  `modules` json NOT NULL COMMENT '包含的模块配置(JSON)',
+  `tech_stack` json DEFAULT NULL COMMENT '完整技术栈配置(JSON)',
+  `gitlab_config` json DEFAULT NULL COMMENT 'GitLab配置(JSON)',
+  `ci_cd_config` json DEFAULT NULL COMMENT 'CI/CD配置(JSON)',
+  `preview_image` varchar(500) DEFAULT NULL COMMENT '模板预览图',
+  `is_default` char(1) DEFAULT '0' COMMENT '是否默认模板: 1=是, 0=否',
+  `status` varchar(10) DEFAULT 'enable' COMMENT '状态: enable/disable',
+  `sort_no` decimal(8,2) DEFAULT 0 COMMENT '排序号',
+  `create_by` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(50) DEFAULT NULL COMMENT '更新人',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标记',
+  `sys_org_code` varchar(64) DEFAULT NULL COMMENT '所属部门',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_template_code` (`template_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='前端代码模板表';
+```
+
+**modules JSON 结构示例**：
+
+```json
+{
+  "router": {
+    "enabled": true,
+    "mode": "history",
+    "lazy": true
+  },
+  "state": {
+    "enabled": true,
+    "library": "pinia"
+  },
+  "api": {
+    "enabled": true,
+    "library": "axios",
+    "interceptor": true
+  },
+  "ui": {
+    "enabled": true,
+    "library": "ant-design-vue",
+    "theme": "default"
+  },
+  "utils": {
+    "enabled": true,
+    "items": ["request", "storage", "validate", "date"]
+  },
+  "components": {
+    "enabled": true,
+    "global": ["Layout", "Header", "Sidebar"]
+  },
+  "styles": {
+    "enabled": true,
+    "preprocessor": "less",
+    "cssReset": true
+  },
+  "build": {
+    "enabled": true,
+    "proxy": true,
+    "gzip": true,
+    "cdn": false
+  }
+}
+```
+
+**tech_stack JSON 结构示例**：
+
+```json
+{
+  "framework": "Vue 3.4.0",
+  "buildTool": "Vite 6.0.0",
+  "uiLibrary": "Ant Design Vue 4.2.0",
+  "language": "TypeScript 5.3.0",
+  "stateManager": "Pinia 2.1.0",
+  "router": "Vue Router 4.2.0",
+  "http": "Axios 1.6.0",
+  "cssPreprocessor": "Less 4.2.0",
+  "codeStyle": "ESLint + Prettier",
+  "testing": "Vitest + Vue Test Utils"
+}
+```
+
+**页面清单**：
+
+| 页面 | 路由 | 说明 |
+|------|------|------|
+| 模板列表 | `/template/list` | 展示所有可用模板，支持类型筛选和搜索 |
+| 模板详情 | `/template/detail/:id` | 查看模板配置、包含模块、技术栈详情 |
+| 模板配置向导 | `/template/wizard` | 分步配置新项目模板（核心页面） |
+| 模板预览 | `/template/preview/:id` | 预览模板生成的项目结构 |
+| 项目生成记录 | `/template/projects` | 查看基于模板生成的项目历史 |
+| 模板管理 | `/template/manage` | 管理员维护模板配置 |
+
+**模板配置向导流程**：
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  第一步：基础信息配置                                     │
+│  - 项目名称                                               │
+│  - 项目编码                                               │
+│  - 项目描述                                               │
+│  - 模板类型选择（移动端/PC端）                             │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  第二步：技术栈选择                                       │
+│  - 前端框架（Vue3/React）                                 │
+│  - 构建工具（Vite/Webpack）                               │
+│  - UI组件库（AntDesignVue/Vant/ElementPlus）              │
+│  - 开发语言（TypeScript/JavaScript）                      │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  第三步：模块选择                                         │
+│  - 路由管理（Vue Router）                                 │
+│  - 状态管理（Pinia/Vuex）                                 │
+│  - API层封装（Axios）                                     │
+│  - 工具函数集（request/storage/validate/date）            │
+│  - 全局组件（Layout/Header/Sidebar）                      │
+│  - 样式方案（Less/Sass + CSS Reset）                      │
+│  - 构建优化（Proxy/Gzip/CDN）                             │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  第四步：GitLab配置（可选）                               │
+│  - GitLab服务器地址                                       │
+│  - 项目组/命名空间                                        │
+│  - 项目名称                                               │
+│  - 初始化README.md                                        │
+│  - 配置Webhook                                            │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  第五步：CI/CD配置（可选）                                │
+│  - Jenkins流水线配置                                      │
+│  - 代码质量检查（Lint/TypeCheck）                         │
+│  - 自动化测试                                             │
+│  - 自动化部署                                             │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  第六步：确认与生成                                       │
+│  - 配置汇总预览                                           │
+│  - 生成方式选择（推送到GitLab/下载到本地）                 │
+│  - 开始生成                                               │
+└─────────────────────────────────────────────────────────┘
+```
+
+**项目生成记录数据模型**：
+
+```sql
+CREATE TABLE `fe_project_generation` (
+  `id` varchar(36) NOT NULL COMMENT '主键ID',
+  `project_name` varchar(100) NOT NULL COMMENT '项目名称',
+  `project_code` varchar(50) NOT NULL COMMENT '项目编码',
+  `template_id` varchar(36) NOT NULL COMMENT '使用的模板ID',
+  `template_name` varchar(100) COMMENT '模板名称',
+  `config_snapshot` json NOT NULL COMMENT '配置快照(JSON)',
+  `generation_type` varchar(20) NOT NULL COMMENT '生成方式: gitlab=推送到GitLab, download=下载到本地',
+  `gitlab_url` varchar(500) DEFAULT NULL COMMENT 'GitLab项目地址',
+  `download_url` varchar(500) DEFAULT NULL COMMENT '下载地址',
+  `status` varchar(20) DEFAULT 'success' COMMENT '状态: generating=生成中, success=成功, failed=失败',
+  `error_message` text COMMENT '错误信息',
+  `generated_by` varchar(50) DEFAULT NULL COMMENT '生成人',
+  `generated_time` datetime DEFAULT NULL COMMENT '生成时间',
+  `create_by` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标记',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='前端项目生成记录表';
+```
+
+**技术实现方案**：
+
+**1. 代码生成引擎**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    代码生成流程                           │
+└─────────────────────────────────────────────────────────┘
+
+用户配置 → 配置校验 → 模板渲染 → 文件打包 → 输出
+                │           │          │          │
+                ▼           ▼          ▼          ▼
+          配置完整性    Handlebars   JSZip     GitLab API
+          技术栈兼容性   模板引擎     压缩      或文件下载
+```
+
+**核心技术栈**：
+- **模板引擎**：Handlebars.js（支持条件渲染、循环、变量替换）
+- **文件打包**：JSZip（生成 ZIP 压缩包）
+- **GitLab API**：GitLab Node.js SDK（创建项目、推送代码）
+- **异步任务**：Spring Boot @Async + Redis Queue（处理长时间生成任务）
+
+**模板文件结构**：
+
+```
+templates/
+├── mobile/                    # 移动端模板
+│   ├── src/
+│   │   ├── main.ts
+│   │   ├── App.vue
+│   │   ├── views/
+│   │   ├── components/
+│   │   ├── router/
+│   │   ├── store/
+│   │   ├── api/
+│   │   ├── utils/
+│   │   └── assets/
+│   ├── package.json.hbs
+│   ├── vite.config.ts.hbs
+│   ├── tsconfig.json.hbs
+│   ├── .eslintrc.cjs.hbs
+│   ├── .prettierrc.json.hbs
+│   └── README.md.hbs
+└── pc/                        # PC端模板
+    ├── src/
+    │   ├── main.ts
+    │   ├── App.vue
+    │   ├── layouts/
+    │   │   ├── BasicLayout.vue
+    │   │   ├── UserLayout.vue
+    │   │   └── components/
+    │   │       ├── Header.vue
+    │   │       ├── Sidebar.vue
+    │   │       └── Footer.vue
+    │   ├── views/
+    │   ├── router/
+    │   ├── store/
+    │   ├── api/
+    │   ├── utils/
+    │   └── assets/
+    ├── package.json.hbs
+    ├── vite.config.ts.hbs
+    ├── tsconfig.json.hbs
+    ├── .eslintrc.cjs.hbs
+    ├── .prettierrc.json.hbs
+    └── README.md.hbs
+```
+
+**模板渲染示例**（package.json.hbs）：
+
+```handlebars
+{
+  "name": "{{projectName}}",
+  "version": "1.0.0",
+  "description": "{{projectDescription}}",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "vue": "{{frameworkVersion}}",
+    {{#if router.enabled}}
+    "vue-router": "{{routerVersion}}",
+    {{/if}}
+    {{#if state.enabled}}
+    "{{state.library}}": "{{stateVersion}}",
+    {{/if}}
+    {{#if api.enabled}}
+    "axios": "{{apiVersion}}",
+    {{/if}}
+    {{#if ui.enabled}}
+    "{{ui.library}}": "{{uiVersion}}",
+    {{/if}}
+    "dayjs": "^1.11.10"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "vite": "{{buildToolVersion}}",
+    "typescript": "~5.3.0",
+    "vue-tsc": "^1.8.27",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    {{#if styles.preprocessor}}
+    "{{styles.preprocessor}}": "^4.2.0",
+    {{/if}}
+    "vitest": "^1.2.0",
+    "@vue/test-utils": "^2.4.0"
+  }
+}
+```
+
+**2. GitLab 集成**
+
+**GitLab API 调用流程**：
+
+```java
+@Service
+public class GitLabProjectService {
+    
+    @Value("${gitlab.url}")
+    private String gitlabUrl;
+    
+    @Value("${gitlab.token}")
+    private String gitlabToken;
+    
+    public GitLabProject createProject(ProjectConfig config) {
+        GitLabApi gitLabApi = new GitLabApi(gitlabUrl, gitlabToken);
+        
+        Project project = new Project()
+            .withName(config.getProjectName())
+            .withNamespaceId(config.getNamespaceId())
+            .withDescription(config.getDescription())
+            .withVisibility(Visibility.PRIVATE)
+            .withInitializeWithReadme(true);
+        
+        Project createdProject = gitLabApi.getProjectApi().createProject(project);
+        
+        return GitLabProject.builder()
+            .projectId(createdProject.getId())
+            .projectUrl(createdProject.getWebUrl())
+            .sshUrl(createdProject.getSshUrlToRepo())
+            .httpUrl(createdProject.getHttpUrlToRepo())
+            .build();
+    }
+    
+    public void pushCode(String projectId, byte[] zipData) {
+        GitLabApi gitLabApi = new GitLabApi(gitlabUrl, gitlabToken);
+        
+        try (ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(zipData))) {
+            ZipEntry entry;
+            while ((entry = zipIn.getNextEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    byte[] content = zipIn.readAllBytes();
+                    String branch = "main";
+                    String commitMessage = "Initial commit from frontend platform";
+                    
+                    gitLabApi.getRepositoryFileApi().createFile(
+                        projectId,
+                        entry.getName(),
+                        branch,
+                        new String(content, StandardCharsets.UTF_8),
+                        commitMessage
+                    );
+                }
+                zipIn.closeEntry();
+            }
+        }
+    }
+}
+```
+
+**GitLab 配置界面**：
+
+| 配置项 | 说明 | 必填 |
+|--------|------|------|
+| GitLab服务器地址 | 如 https://gitlab.company.com | 是 |
+| 访问令牌 | Personal Access Token（需要 api 权限） | 是 |
+| 项目组/命名空间 | 项目所属的组 | 是 |
+| 项目名称 | GitLab 项目名称 | 是 |
+| 初始化README | 是否创建 README.md | 否 |
+| 配置Webhook | 是否配置 Jenkins Webhook | 否 |
+
+**3. 下载功能**
+
+**下载接口实现**：
+
+```java
+@RestController
+@RequestMapping("/fe/template")
+public class TemplateController {
+    
+    @Autowired
+    private TemplateGeneratorService generatorService;
+    
+    @PostMapping("/generate/download")
+    public void downloadProject(@RequestBody ProjectConfig config, 
+                                  HttpServletResponse response) {
+        byte[] zipData = generatorService.generateProject(config);
+        
+        String fileName = config.getProjectName() + ".zip";
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", 
+                          "attachment; filename=\"" + fileName + "\"");
+        response.setContentLength(zipData.length);
+        
+        try (OutputStream out = response.getOutputStream()) {
+            out.write(zipData);
+            out.flush();
+        } catch (IOException e) {
+            throw new RuntimeException("下载失败", e);
+        }
+    }
+}
+```
+
+**前端下载实现**：
+
+```typescript
+const downloadProject = async (config: ProjectConfig) => {
+  const response = await fetch('/fe/template/generate/download', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(config),
+  });
+  
+  if (!response.ok) {
+    throw new Error('生成失败');
+  }
+  
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${config.projectName}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+};
+```
+
+**4. 异步任务处理**
+
+**异步任务配置**：
+
+```java
+@Configuration
+@EnableAsync
+public class AsyncConfig {
+    
+    @Bean("projectGeneratorExecutor")
+    public Executor projectGeneratorExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("project-generator-");
+        executor.initialize();
+        return executor;
+    }
+}
+```
+
+**异步生成任务**：
+
+```java
+@Service
+public class TemplateGeneratorService {
+    
+    @Async("projectGeneratorExecutor")
+    public CompletableFuture<String> generateProjectAsync(
+        String recordId, 
+        ProjectConfig config
+    ) {
+        try {
+            updateStatus(recordId, "generating");
+            
+            byte[] zipData = generateProject(config);
+            
+            if ("gitlab".equals(config.getGenerationType())) {
+                GitLabProject project = gitLabService.createProject(config);
+                gitLabService.pushCode(project.getProjectId(), zipData);
+                
+                updateResult(recordId, "success", project.getHttpUrl());
+            } else {
+                String downloadUrl = saveToStorage(zipData, config.getProjectName());
+                updateResult(recordId, "success", downloadUrl);
+            }
+            
+            return CompletableFuture.completedFuture("success");
+        } catch (Exception e) {
+            updateResult(recordId, "failed", null, e.getMessage());
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+}
+```
+
+**5. CI/CD 自动配置**
+
+**Jenkinsfile 模板**：
+
+```groovy
+pipeline {
+    agent any
+    
+    environment {
+        NODE_VERSION = '18'
+        NPM_REGISTRY = 'https://registry.npmmirror.com'
+    }
+    
+    stages {
+        stage('安装依赖') {
+            steps {
+                sh 'node -v'
+                sh 'npm -v'
+                sh 'npm config set registry ${NPM_REGISTRY}'
+                sh 'npm ci'
+            }
+        }
+        
+        stage('代码检查') {
+            parallel {
+                stage('Lint') {
+                    steps {
+                        sh 'npm run lint'
+                    }
+                }
+                stage('TypeCheck') {
+                    steps {
+                        sh 'npm run type-check'
+                    }
+                }
+            }
+        }
+        
+        stage('单元测试') {
+            steps {
+                sh 'npm run test:unit'
+            }
+        }
+        
+        stage('构建') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+        
+        stage('部署') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh '部署脚本'
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+        failure {
+            emailext(
+                subject: '构建失败: ${env.JOB_NAME} - ${env.BUILD_NUMBER}',
+                body: '构建失败，请检查日志',
+                to: '${env.CHANGE_AUTHOR_EMAIL}'
+            )
+        }
+    }
+}
+```
+
+**预设模板清单**：
+
+| 模板编码 | 模板名称 | 类型 | 适用场景 |
+|---------|---------|------|---------|
+| vue3-mobile-standard | Vue3移动端标准模板 | mobile | 移动端H5应用、小程序 |
+| vue3-pc-admin | Vue3 PC端管理后台 | pc | 企业管理系统 |
+| vue3-pc-portal | Vue3 PC端门户 | pc | 官网、展示型网站 |
+| react-mobile-standard | React移动端标准模板 | mobile | React技术栈移动应用 |
+| react-pc-admin | React PC端管理后台 | pc | React技术栈管理系统 |
+
+**功能亮点**：
+
+1. **可视化配置**：通过向导式界面，无需编写代码即可完成项目配置
+2. **实时预览**：配置过程中实时预览项目结构和关键文件内容
+3. **智能推荐**：根据选择的模板类型，智能推荐合适的技术栈组合
+4. **版本管理**：模板支持版本控制，可回滚到历史版本
+5. **配置复用**：支持保存配置为自定义模板，供团队复用
+6. **批量生成**：支持批量生成多个项目（适用于微前端场景）
+7. **权限控制**：基于 RBAC 的模板访问和生成权限管理
+
+---
+
 ### 3.4 AI 效能度量看板 (AI Efficiency Dashboard)
 
 #### 3.4.1 效能数据采集
@@ -1174,3 +1774,82 @@ Step 3: 执行接入
 | 前端项目 CI 标准化覆盖率 | 60% | 100% |
 | AI MR 审查覆盖率 | 30% | >80% |
 | MR 审查平均响应时间 | <30min | <10min |
+
+---
+
+## 9. 开发进度追踪
+
+> 本章节记录各功能模块的实际开发进度，方便后续基于进度继续开发。最后更新：2026-05-19
+
+### 9.1 前端代码模板配置中心（3.2.4）
+
+#### 9.1.1 已完成任务 ✅
+
+| 序号 | 任务 | 产出文件 | 说明 |
+|------|------|---------|------|
+| 1 | 设计文档编写 | `docs/New_Frontend_Platform_Design_v2.md` | 完成功能设计、数据模型、页面清单、技术方案 |
+| 2 | 数据库表结构 SQL | `server/db/fe_template_init.sql` | 包含 `fe_template` 和 `fe_project_generation` 两张表的 CREATE TABLE |
+| 3 | 菜单与权限 SQL | `server/db/fe_template_init.sql` | 包含 `sys_permission` 一级/二级菜单及按钮权限、`sys_role_permission` 角色授权 |
+| 4 | 字典数据 SQL | `server/db/fe_template_init.sql` | 包含模板类型、模板状态、生成方式、前端框架、构建工具、UI组件库、开发语言等字典 |
+| 5 | 初始模板数据 SQL | `server/db/fe_template_init.sql` | 包含 5 条预设模板（Vue3移动端标准、Vue3 PC管理后台、Vue3 PC门户、React移动端、React PC管理后台） |
+| 6 | 后端实体类 | `server/.../lowcode/template/entity/FeTemplate.java` | fe_template 表对应实体 |
+| 7 | 后端实体类 | `server/.../lowcode/project/entity/FeProjectGeneration.java` | fe_project_generation 表对应实体 |
+| 8 | 后端 Mapper | `server/.../lowcode/template/mapper/FeTemplateMapper.java` | FeTemplate Mapper 接口 |
+| 9 | 后端 Mapper | `server/.../lowcode/project/mapper/FeProjectGenerationMapper.java` | FeProjectGeneration Mapper 接口 |
+| 10 | 后端 Service | `server/.../lowcode/template/service/IFeTemplateService.java` | FeTemplate Service 接口 |
+| 11 | 后端 Service | `server/.../lowcode/template/service/impl/FeTemplateServiceImpl.java` | FeTemplate Service 实现 |
+| 12 | 后端 Service | `server/.../lowcode/project/service/IFeProjectGenerationService.java` | FeProjectGeneration Service 接口 |
+| 13 | 后端 Service | `server/.../lowcode/project/service/impl/FeProjectGenerationServiceImpl.java` | FeProjectGeneration Service 实现 |
+| 14 | 后端 Controller | `server/.../lowcode/template/controller/FeTemplateController.java` | 模板 CRUD 接口 |
+| 15 | 后端 Controller | `server/.../lowcode/project/controller/FeProjectGenerationController.java` | 项目生成记录 CRUD 接口 |
+| 16 | 前端模板列表页 | `web/src/views/lowcode/template/FeTemplateList.vue` | 模板列表页面 |
+| 17 | 前端模板弹窗 | `web/src/views/lowcode/template/components/FeTemplateModal.vue` | 模板新增/编辑弹窗 |
+| 18 | 前端项目生成记录页 | `web/src/views/lowcode/project/FeProjectGenerationList.vue` | 项目生成记录列表页面 |
+| 19 | 修复 SQL ID 过长问题 | `server/db/fe_template_init.sql` | 将字符串ID替换为19位数字ID，适配 varchar(32) |
+
+#### 9.1.2 待完成任务 📋
+
+| 序号 | 任务 | 优先级 | 说明 | 涉及文件/模块 |
+|------|------|--------|------|--------------|
+| 1 | 代码生成引擎（Handlebars模板渲染） | 🔴 高 | 核心功能，根据配置渲染模板文件并打包 | 后端新增 `TemplateGeneratorService`，模板文件目录 `resources/templates/` |
+| 2 | 模板文件编写（mobile + pc） | 🔴 高 | 编写 Handlebars 模板文件（package.json.hbs、vite.config.ts.hbs 等） | `resources/templates/mobile/`、`resources/templates/pc/` |
+| 3 | GitLab 项目创建与代码推送 | 🔴 高 | 调用 GitLab API 创建项目并推送生成的代码 | 后端新增 `GitLabProjectService`，需引入 `gitlab4j-api` 依赖 |
+| 4 | 项目下载功能（ZIP打包） | 🔴 高 | 将生成的项目文件打包为 ZIP 供下载 | 后端 `TemplateController` 新增 download 接口 |
+| 5 | 模板配置向导页面 | 🟡 中 | 分步配置向导（基础信息→技术栈→模块→GitLab→CI/CD→确认） | 前端新增 `FeTemplateWizard.vue` |
+| 6 | 异步任务处理 | 🟡 中 | 使用 @Async + 线程池处理长时间生成任务 | 后端新增 `AsyncConfig`，改造 `TemplateGeneratorService` |
+| 7 | CI/CD 配置自动生成 | 🟡 中 | 根据配置自动生成 Jenkinsfile | 模板文件中增加 `Jenkinsfile.hbs` |
+| 8 | 模板预览功能 | 🟢 低 | 预览模板生成的项目结构和关键文件 | 前端新增 `FeTemplatePreview.vue` |
+| 9 | 配置复用（保存为自定义模板） | 🟢 低 | 保存配置快照为新的自定义模板 | 后端 `FeTemplate` 扩展，前端向导页增加"保存为模板"按钮 |
+| 10 | 批量生成（微前端场景） | 🟢 低 | 支持一次配置生成多个子项目 | 后端新增批量生成接口 |
+
+#### 9.1.3 下一步开发建议
+
+1. **优先实现代码生成引擎**（任务1+2）：这是整个功能的核心，建议先完成 Handlebars 模板渲染和文件打包逻辑
+2. **然后实现下载功能**（任务4）：比 GitLab 集成简单，可以快速验证生成引擎的正确性
+3. **再实现 GitLab 集成**（任务3）：依赖代码生成引擎，需要配置 GitLab 连接信息
+4. **最后开发向导页面**（任务5）：前后端核心逻辑就绪后，再完善前端交互体验
+
+#### 9.1.4 关键技术决策备忘
+
+| 决策项 | 选择 | 原因 |
+|--------|------|------|
+| 模板引擎 | Handlebars.js | 轻量、支持条件渲染和循环、Java 生态有 JHandlebars |
+| 文件打包 | JSZip（前端）/ ZipOutputStream（后端） | 后端生成更安全，前端下载即可 |
+| GitLab SDK | gitlab4j-api | Java 生态最成熟的 GitLab API 客户端 |
+| ID 策略 | 19位数字字符串 | 适配 JeecgBoot 的 varchar(32) 主键列 |
+| 异步方案 | Spring @Async + ThreadPoolTaskExecutor | 简单可靠，无需引入消息队列 |
+
+### 9.2 其他模块开发进度
+
+| 模块 | 章节 | 状态 | 说明 |
+|------|------|------|------|
+| AI 开发者中心 - Skill 资产库 | 3.1.1 | 📝 设计完成 | 数据模型和页面设计已完成，未开始编码 |
+| AI 开发者中心 - Claude Code 配置导出 | 3.1.2 | 📝 设计完成 | 配置格式和导出流程已设计，未开始编码 |
+| AI 开发者中心 - MCP Server 管理 | 3.1.3 | 📝 设计完成 | 基于现有 AiragMcpList.vue 扩展，未开始编码 |
+| 低代码 - 对话式出码 Chat2Code | 3.2.1 | 📝 设计完成 | 对话流程和沙箱方案已设计，未开始编码 |
+| 低代码 - Schema 转换引擎 | 3.2.2 | 📝 设计完成 | 转换规则已定义，未开始编码 |
+| 低代码 - 可视化沙箱 | 3.2.3 | 📝 设计完成 | iframe 沙箱方案已设计，未开始编码 |
+| 业务管理 - 前端应用管理 V2 | 3.3.1 | 📝 设计完成 | 数据模型和页面清单已设计，未开始编码 |
+| 业务管理 - 前端人员管理 V2 | 3.3.2 | 📝 设计完成 | 数据模型已设计，未开始编码 |
+| AI 效能度量看板 | 3.4 | 📝 设计完成 | 指标体系和看板布局已设计，未开始编码 |
+| 在线代码医生 | 3.5 | 📝 设计完成 | 分析维度和页面设计已完成，未开始编码 |
