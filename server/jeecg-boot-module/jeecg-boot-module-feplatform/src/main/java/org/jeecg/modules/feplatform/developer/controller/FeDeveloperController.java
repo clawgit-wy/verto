@@ -59,6 +59,9 @@ public class FeDeveloperController extends JeecgController<FeDeveloper, IFeDevel
         if (feDeveloper.getRole() == null) {
             feDeveloper.setRole("developer");
         }
+        if (feDeveloper.getUserId() == null) {
+            feDeveloper.setUserId("");
+        }
         feDeveloperService.save(feDeveloper);
         return Result.OK("添加成功！");
     }

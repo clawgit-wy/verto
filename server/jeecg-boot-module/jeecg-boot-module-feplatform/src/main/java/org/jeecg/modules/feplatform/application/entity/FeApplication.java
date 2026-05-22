@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.jeecg.common.aspect.annotation.Dict;
 import org.jeecgframework.poi.excel.annotation.Excel;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -31,6 +32,10 @@ public class FeApplication implements Serializable {
     @Schema(description = "主键ID")
     private String id;
 
+    @Excel(name = "应用简称", width = 15)
+    @Schema(description = "应用简称")
+    private String appShortName;
+
     @Excel(name = "应用名称", width = 15)
     @Schema(description = "应用名称")
     private String appName;
@@ -39,9 +44,18 @@ public class FeApplication implements Serializable {
     @Schema(description = "应用编码")
     private String appCode;
 
-    @Excel(name = "应用描述", width = 30)
     @Schema(description = "应用描述")
     private String description;
+
+    @Schema(description = "所属领域")
+    private String domain;
+
+    @Schema(description = "应用等级")
+    private String appLevel;
+
+    @Schema(description = "创建人ID")
+    @Dict(dictTable = "fe_developer", dicCode = "id", dicText = "real_name")
+    private String creatorId;
 
     @Schema(description = "应用图标")
     private String icon;
@@ -60,6 +74,7 @@ public class FeApplication implements Serializable {
     private String deployUrl;
 
     @Schema(description = "负责人ID")
+    @Dict(dictTable = "fe_developer", dicCode = "id", dicText = "real_name")
     private String ownerId;
 
     @Schema(description = "所属团队ID")

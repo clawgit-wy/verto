@@ -55,8 +55,27 @@ public class FeApplicationController extends JeecgController<FeApplication, IFeA
         if (feApplication.getRepoBranch() == null) {
             feApplication.setRepoBranch("main");
         }
+        if (feApplication.getAppCode() == null || feApplication.getAppCode().trim().isEmpty()) {
+            feApplication.setAppCode(generateAppCode(feApplication.getAppShortName()));
+        }
         feApplicationService.save(feApplication);
         return Result.OK("添加成功！");
+    }
+
+    private String generateAppCode(String appShortName) {
+        String prefix;
+        if (appShortName != null && !appShortName.trim().isEmpty()) {
+            prefix = appShortName.trim().toLowerCase().replaceAll("[^a-z0-9]+", "_");
+            if (prefix.length() > 20) {
+                prefix = prefix.substring(0, 20);
+            }
+            if (prefix.isEmpty()) {
+                prefix = "app";
+            }
+        } else {
+            prefix = "app";
+        }
+        return prefix + "_" + System.currentTimeMillis();
     }
 
     @AutoLog(value = "应用-编辑")

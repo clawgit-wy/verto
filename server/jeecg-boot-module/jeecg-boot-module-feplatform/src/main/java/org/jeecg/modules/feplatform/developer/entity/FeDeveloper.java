@@ -41,6 +41,17 @@ public class FeDeveloper implements Serializable {
     @Schema(description = "工号")
     private String employeeNo;
 
+    @Schema(description = "邮箱")
+    private String email;
+
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @Schema(description = "入职时间")
+    private Date hireDate;
+
+    @Schema(description = "工位位置")
+    private String seatLocation;
+
     @Schema(description = "所属团队ID")
     private String teamId;
 
@@ -59,6 +70,9 @@ public class FeDeveloper implements Serializable {
     @Excel(name = "状态", width = 15)
     @Schema(description = "状态: active/inactive")
     private String status;
+
+    @Schema(description = "备注")
+    private String remark;
 
     @Schema(description = "创建人")
     private String createBy;
