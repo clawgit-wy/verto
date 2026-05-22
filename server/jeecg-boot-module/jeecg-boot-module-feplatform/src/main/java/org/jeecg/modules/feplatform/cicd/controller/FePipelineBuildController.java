@@ -72,5 +72,13 @@ public class FePipelineBuildController extends JeecgController<FePipelineBuild, 
         FePipelineBuild entity = fePipelineBuildService.getById(id);
         return Result.OK(entity);
     }
+
+    @Operation(summary = "构建记录-拉取Jenkins实时控制台日志")
+    @GetMapping(value = "/consoleLog")
+    public Result<String> consoleLog(@RequestParam(name = "id", required = true) String id,
+                                      @RequestParam(name = "start", defaultValue = "0") long start) {
+        String log = fePipelineBuildService.fetchConsoleLog(id, start);
+        return Result.OK(log);
+    }
 }
 //update-end---author:feplatform ---date:2026-05-22  for:【CICD治理】构建记录Controller---

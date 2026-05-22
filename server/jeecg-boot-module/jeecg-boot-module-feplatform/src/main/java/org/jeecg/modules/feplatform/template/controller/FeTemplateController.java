@@ -14,11 +14,13 @@ import org.jeecg.common.system.base.controller.JeecgController;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.modules.feplatform.template.entity.FeTemplate;
 import org.jeecg.modules.feplatform.template.service.IFeTemplateService;
+import org.jeecg.modules.feplatform.template.client.GitLabClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Arrays;
+import java.util.Map;
 
 //update-begin---author:feplatform ---date:2026-05-22  for:【模版中心】模版主表Controller---
 @Tag(name = "模版管理")
@@ -29,6 +31,9 @@ public class FeTemplateController extends JeecgController<FeTemplate, IFeTemplat
 
     @Autowired
     private IFeTemplateService feTemplateService;
+
+    @Autowired
+    private GitLabClient gitLabClient;
 
     @Operation(summary = "模版-分页列表查询")
     @GetMapping(value = "/list")
@@ -90,6 +95,26 @@ public class FeTemplateController extends JeecgController<FeTemplate, IFeTemplat
     @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, FeTemplate.class);
+    }
+
+    @Operation(summary = "GitLab 连通性测试")
+    @GetMapping(value = "/gitlab/ping")
+    public Result<Map<String, Object>> gitlabPing(@RequestParam(name = "gitlabUrl") String gitlabUrl,
+                                                   @RequestParam(name = "token") String token) {
+        return Result.OK(gitLabClient.ping(gitlabUrl, token));
+    }
+
+    @AutoLog(value = "为模板仓库注册Webhook")
+    @Operation(summary = "为模板仓库注册Webhook(指向平台 /feplatform/webhook/gitlab)")
+    @PostMapping(value = "/gitlab/registerWebhook")
+    public Result<Object> registerWebhook(@RequestBody Map<String, Object> body) {
+        String gitlabUrl = (String) body.get("gitlabUrl");
+        String token = (String) body.get("token");
+        String projectId = (String) body.get("projectId");
+        String webhookUrl = (String) body.get("webhookUrl");
+        String push = String.valueOf(body.getOrDefault("pushEvents", "true"));
+        String mr = String.valueOf(body.getOrDefault("mergeRequestEvents", "true"));
+        return Result.OK(gitLabClient.addWebhook(gitlabUrl, token, projectId, webhookUrl, push, mr));
     }
 }
 //update-end---author:feplatform ---date:2026-05-22  for:【模版中心】模版主表Controller---

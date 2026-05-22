@@ -17,8 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Map;
 
-//update-begin---author:feplatform ---date:2026-05-22  for:【CICD治理】Jenkins实例Controller---
 @Tag(name = "Jenkins实例管理")
 @RestController
 @RequestMapping("/feplatform/cicd/jenkins")
@@ -82,5 +82,12 @@ public class FeJenkinsInstanceController extends JeecgController<FeJenkinsInstan
         FeJenkinsInstance entity = feJenkinsInstanceService.getById(id);
         return Result.OK(entity);
     }
+
+    @AutoLog(value = "Jenkins实例-连通性测试")
+    @Operation(summary = "Jenkins实例-连通性测试")
+    @GetMapping(value = "/testConnection")
+    public Result<Map<String, Object>> testConnection(@RequestParam(name = "id", required = true) String id) {
+        Map<String, Object> result = feJenkinsInstanceService.testConnection(id);
+        return Result.OK(result);
+    }
 }
-//update-end---author:feplatform ---date:2026-05-22  for:【CICD治理】Jenkins实例Controller---

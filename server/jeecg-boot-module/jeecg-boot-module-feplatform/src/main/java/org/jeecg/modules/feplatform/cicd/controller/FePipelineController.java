@@ -17,8 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Map;
 
-//update-begin---author:feplatform ---date:2026-05-22  for:【CICD治理】流水线Controller---
 @Tag(name = "流水线管理")
 @RestController
 @RequestMapping("/feplatform/cicd/pipeline")
@@ -79,5 +79,30 @@ public class FePipelineController extends JeecgController<FePipeline, IFePipelin
         FePipeline entity = fePipelineService.getById(id);
         return Result.OK(entity);
     }
+
+    @AutoLog(value = "流水线-触发构建")
+    @Operation(summary = "流水线-触发构建")
+    @PostMapping(value = "/triggerBuild")
+    public Result<String> triggerBuild(@RequestParam(name = "pipelineId", required = true) String pipelineId,
+                                        @RequestBody(required = false) Map<String, String> parameters) {
+        String buildId = fePipelineService.triggerBuild(pipelineId, parameters);
+        return Result.OK("构建已触发", buildId);
+    }
+
+    @AutoLog(value = "流水线-中止构建")
+    @Operation(summary = "流水线-中止构建")
+    @PostMapping(value = "/abortBuild")
+    public Result<String> abortBuild(@RequestParam(name = "pipelineId", required = true) String pipelineId,
+                                      @RequestParam(name = "buildNo", required = true) Integer buildNo) {
+        fePipelineService.abortBuild(pipelineId, buildNo);
+        return Result.OK("中止请求已发送");
+    }
+
+    @AutoLog(value = "流水线-同步Jenkins构建历史")
+    @Operation(summary = "流水线-同步Jenkins构建历史")
+    @PostMapping(value = "/syncBuilds")
+    public Result<Integer> syncBuilds(@RequestParam(name = "pipelineId", required = true) String pipelineId) {
+        int count = fePipelineService.syncBuilds(pipelineId);
+        return Result.OK("同步完成", count);
+    }
 }
-//update-end---author:feplatform ---date:2026-05-22  for:【CICD治理】流水线Controller---

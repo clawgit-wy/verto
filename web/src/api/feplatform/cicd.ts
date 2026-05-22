@@ -11,6 +11,7 @@ enum Api {
   jenkinsEdit = '/feplatform/cicd/jenkins/edit',
   jenkinsDelete = '/feplatform/cicd/jenkins/delete',
   jenkinsDeleteBatch = '/feplatform/cicd/jenkins/deleteBatch',
+  jenkinsTest = '/feplatform/cicd/jenkins/testConnection',
 
   // 技术栈
   techStackList = '/feplatform/cicd/techStack/list',
@@ -35,12 +36,16 @@ enum Api {
   pipelineEdit = '/feplatform/cicd/pipeline/edit',
   pipelineDelete = '/feplatform/cicd/pipeline/delete',
   pipelineDeleteBatch = '/feplatform/cicd/pipeline/deleteBatch',
+  pipelineTrigger = '/feplatform/cicd/pipeline/triggerBuild',
+  pipelineAbort = '/feplatform/cicd/pipeline/abortBuild',
+  pipelineSync = '/feplatform/cicd/pipeline/syncBuilds',
 
   // 构建记录
   buildList = '/feplatform/cicd/build/list',
   buildQueryById = '/feplatform/cicd/build/queryById',
   buildDelete = '/feplatform/cicd/build/delete',
   buildDeleteBatch = '/feplatform/cicd/build/deleteBatch',
+  buildConsoleLog = '/feplatform/cicd/build/consoleLog',
 }
 
 // ============ 通用批量删除 ============
@@ -78,6 +83,9 @@ export const jenkinsDelete = (params, handleSuccess) => {
 };
 
 export const jenkinsBatchDelete = makeBatchDelete(Api.jenkinsDeleteBatch);
+
+export const jenkinsTestConnection = (id: string) =>
+  defHttp.get({ url: Api.jenkinsTest, params: { id } });
 
 // ============ 技术栈 ============
 export const techStackList = (params) => defHttp.get({ url: Api.techStackList, params });
@@ -132,6 +140,21 @@ export const pipelineDelete = (params, handleSuccess) => {
 };
 
 export const pipelineBatchDelete = makeBatchDelete(Api.pipelineDeleteBatch);
+
+export const pipelineTriggerBuild = (pipelineId: string, parameters?: Record<string, string>) =>
+  defHttp.post({
+    url: `${Api.pipelineTrigger}?pipelineId=${encodeURIComponent(pipelineId)}`,
+    data: parameters || {},
+  });
+
+export const pipelineAbortBuild = (pipelineId: string, buildNo: number) =>
+  defHttp.post({ url: Api.pipelineAbort, params: { pipelineId, buildNo } }, { joinParamsToUrl: true });
+
+export const pipelineSyncBuilds = (pipelineId: string) =>
+  defHttp.post({ url: Api.pipelineSync, params: { pipelineId } }, { joinParamsToUrl: true });
+
+export const buildConsoleLog = (id: string, start = 0) =>
+  defHttp.get({ url: Api.buildConsoleLog, params: { id, start } });
 
 // ============ 构建记录 ============
 export const buildList = (params) => defHttp.get({ url: Api.buildList, params });

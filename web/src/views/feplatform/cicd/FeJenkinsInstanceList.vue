@@ -8,6 +8,7 @@
       <template #action="{ record }">
         <TableAction
           :actions="[
+            { label: '测试连通', onClick: handleTest.bind(null, record) },
             { label: '编辑', onClick: handleEdit.bind(null, record) },
             {
               label: '删除',
@@ -48,6 +49,7 @@
     jenkinsDelete,
     jenkinsBatchDelete,
     jenkinsQueryById,
+    jenkinsTestConnection,
   } from '/@/api/feplatform/cicd';
 
   const { createMessage } = useMessage();
@@ -105,6 +107,19 @@
   function handleBatchDelete() {
     if (selectedRowKeys.value.length === 0) return;
     jenkinsBatchDelete({ ids: selectedRowKeys.value.join(',') }, reload);
+  }
+
+  async function handleTest(record) {
+    try {
+      const res: any = await jenkinsTestConnection(record.id);
+      if (res && res.success) {
+        createMessage.success('Jenkins 连通正常');
+      } else {
+        createMessage.error('连通失败: ' + (res?.error || res?.status || '未知'));
+      }
+    } catch (e: any) {
+      createMessage.error('请求失败: ' + e?.message);
+    }
   }
 
   async function handleOk() {

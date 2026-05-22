@@ -28,6 +28,11 @@ enum Api {
   recordDelete = '/feplatform/createRecord/delete',
   recordDeleteBatch = '/feplatform/createRecord/deleteBatch',
   recordExportXls = '/feplatform/createRecord/exportXls',
+  recordWizard = '/feplatform/createRecord/wizard',
+
+  // GitLab 集成
+  gitlabPing = '/feplatform/template/gitlab/ping',
+  gitlabRegisterWebhook = '/feplatform/template/gitlab/registerWebhook',
 }
 
 export const getExportUrl = Api.exportXls;
@@ -122,3 +127,20 @@ export const recordBatchDelete = (params, handleSuccess) => {
 };
 
 export const getRecordExportUrl = Api.recordExportXls;
+
+// ============ 应用创建向导 ============
+export const createAppByWizard = (params: Record<string, any>) =>
+  defHttp.post({ url: Api.recordWizard, params });
+
+// ============ GitLab 集成 ============
+export const gitlabPing = (gitlabUrl: string, token: string) =>
+  defHttp.get({ url: Api.gitlabPing, params: { gitlabUrl, token } });
+
+export const registerGitlabWebhook = (params: {
+  gitlabUrl: string;
+  token: string;
+  projectId: string;
+  webhookUrl: string;
+  pushEvents?: boolean;
+  mergeRequestEvents?: boolean;
+}) => defHttp.post({ url: Api.gitlabRegisterWebhook, params });

@@ -8,6 +8,8 @@
       <template #action="{ record }">
         <TableAction
           :actions="[
+            { label: '触发构建', onClick: handleTrigger.bind(null, record) },
+            { label: '同步历史', onClick: handleSync.bind(null, record) },
             { label: '编辑', onClick: handleEdit.bind(null, record) },
             {
               label: '删除',
@@ -48,6 +50,8 @@
     pipelineDelete,
     pipelineBatchDelete,
     pipelineQueryById,
+    pipelineTriggerBuild,
+    pipelineSyncBuilds,
   } from '/@/api/feplatform/cicd';
 
   const { createMessage } = useMessage();
@@ -59,7 +63,7 @@
       columns: pipelineColumns,
       canResize: true,
       formConfig: { schemas: pipelineSearchSchema, autoSubmitOnEnter: true },
-      actionColumn: { width: 150, fixed: 'right', title: '操作', dataIndex: 'action' },
+      actionColumn: { width: 280, fixed: 'right', title: '操作', dataIndex: 'action' },
     },
   });
 
@@ -105,6 +109,24 @@
   function handleBatchDelete() {
     if (selectedRowKeys.value.length === 0) return;
     pipelineBatchDelete({ ids: selectedRowKeys.value.join(',') }, reload);
+  }
+
+  async function handleTrigger(record) {
+    try {
+      await pipelineTriggerBuild(record.id);
+      createMessage.success('构建已触发');
+    } catch (e: any) {
+      createMessage.error('触发失败: ' + (e?.message || e));
+    }
+  }
+
+  async function handleSync(record) {
+    try {
+      const res: any = await pipelineSyncBuilds(record.id);
+      createMessage.success('同步完成，新增 ' + (res ?? 0) + ' 条记录');
+    } catch (e: any) {
+      createMessage.error('同步失败: ' + (e?.message || e));
+    }
   }
 
   async function handleOk() {

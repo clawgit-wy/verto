@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Arrays;
+import java.util.Map;
 
 //update-begin---author:feplatform ---date:2026-05-22  for:【模版中心】应用创建记录Controller---
 @Tag(name = "应用创建记录")
@@ -77,6 +78,35 @@ public class FeAppCreateRecordController extends JeecgController<FeAppCreateReco
     @RequestMapping(value = "/exportXls")
     public ModelAndView exportXls(HttpServletRequest request, FeAppCreateRecord feAppCreateRecord) {
         return super.exportXls(request, feAppCreateRecord, FeAppCreateRecord.class, "应用创建记录");
+    }
+
+    @AutoLog(value = "应用创建向导")
+    @Operation(summary = "应用创建向导(拉取模板→替换变量→输出zip/创建GitLab仓库)")
+    @PostMapping(value = "/wizard")
+    public Result<FeAppCreateRecord> wizard(@RequestBody Map<String, Object> body) {
+        IFeAppCreateRecordService.WizardRequest req = new IFeAppCreateRecordService.WizardRequest();
+        req.templateId = (String) body.get("templateId");
+        req.versionId = (String) body.get("versionId");
+        req.appShortName = (String) body.get("appShortName");
+        req.appName = (String) body.get("appName");
+        req.appCode = (String) body.get("appCode");
+        req.ownerId = (String) body.get("ownerId");
+        req.outputType = (String) body.getOrDefault("outputType", "download");
+        Object ns = body.get("gitlabNamespaceId");
+        if (ns instanceof Number) {
+            req.gitlabNamespaceId = ((Number) ns).intValue();
+        } else if (ns != null) {
+            req.gitlabNamespaceId = Integer.parseInt(ns.toString());
+        }
+        req.gitlabUrl = (String) body.get("gitlabUrl");
+        req.gitlabToken = (String) body.get("gitlabToken");
+        Object params = body.get("params");
+        if (params instanceof Map) {
+            //noinspection unchecked
+            req.params = (Map<String, Object>) params;
+        }
+        FeAppCreateRecord record = feAppCreateRecordService.createAppByWizard(req);
+        return Result.OK(record);
     }
 }
 //update-end---author:feplatform ---date:2026-05-22  for:【模版中心】应用创建记录Controller---
