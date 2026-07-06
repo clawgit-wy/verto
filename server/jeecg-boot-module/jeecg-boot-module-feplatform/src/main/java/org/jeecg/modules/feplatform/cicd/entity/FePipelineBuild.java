@@ -49,12 +49,9 @@ public class FePipelineBuild implements Serializable {
     private String triggerUser;
 
     @Schema(description = "提交SHA")
-    private String commitSha;
+  private String commitSha;
 
-    @Schema(description = "Node版本")
-    private String nodeVersion;
-
-    @Schema(description = "技术栈")
+  @Schema(description = "技术栈")
     private String techStack;
 
     @Schema(description = "制品版本号")

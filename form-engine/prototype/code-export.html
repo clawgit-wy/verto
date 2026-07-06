@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代码导出 · 表单引擎工作台</title>
+<style>
+  /* ===== 基础重置与设计变量 ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6fa;
+    color: #1f2937;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== 顶部控制栏 ===== */
+  .topbar {
+    height: 56px;
+    flex-shrink: 0;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+  .topbar-title { font-weight: 700; font-size: 15px; }
+  .topbar-link { color: #6b7280; text-decoration: none; font-size: 13px; }
+  .topbar-link:hover { color: #4f46e5; }
+
+  /* ===== 按钮 ===== */
+  .btn {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s, border-color .15s, color .15s;
+    font-family: inherit;
+  }
+  .btn-primary { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .btn-primary:hover { background: #4338ca; border-color: #4338ca; }
+  .btn-secondary { background: #fff; color: #374151; border-color: #e5e7eb; }
+  .btn-secondary:hover { border-color: #4f46e5; color: #4f46e5; }
+  .btn-block { width: 100%; justify-content: center; }
+
+  /* ===== 主体两栏 ===== */
+  .workspace {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* 左侧配置面板 */
+  .left-panel {
+    width: 300px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    padding: 18px 16px;
+    overflow-y: auto;
+  }
+  .panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+  }
+  .panel-sub {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 18px;
+  }
+  .opt-section {
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .opt-section:last-of-type { border-bottom: none; }
+  .opt-section h4 {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 10px;
+  }
+  .opt-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+  }
+  .opt-row input[type=radio],
+  .opt-row input[type=checkbox] {
+    margin-right: 8px;
+    cursor: pointer;
+  }
+  .opt-row input[type=radio] { width: 14px; height: 14px; }
+  .opt-row input[type=checkbox] { width: 14px; height: 14px; }
+
+  .tmpl-info {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.9;
+  }
+  .tmpl-info .k { color: #6b7280; }
+  .tmpl-info .v { color: #1f2937; font-weight: 500; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+
+  /* 右侧预览 */
+  .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #f5f6fa;
+  }
+  .tabs {
+    height: 40px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: stretch;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  .tab {
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .tab:hover { color: #4f46e5; }
+  .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; font-weight: 600; }
+
+  .code-area {
+    flex: 1;
+    overflow: hidden;
+    padding: 16px;
+  }
+  .code-panel {
+    background: #1e1e2e;
+    color: #e5e7eb;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 18px 20px;
+    border-radius: 6px;
+    overflow: auto;
+    height: 100%;
+    white-space: pre;
+    border: 1px solid #313244;
+  }
+  .code-panel .tok-tag { color: #7dd3fc; }
+  .code-panel .tok-attr { color: #c4b5fd; }
+  .code-panel .tok-str { color: #86efac; }
+  .code-panel .tok-com { color: #6b7280; font-style: italic; }
+  .code-panel .tok-kw { color: #f0abfc; }
+  .code-panel .tok-num { color: #fcd34d; }
+
+  /* 预览渲染 */
+  .preview-form {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 560px;
+    margin: 0 auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .preview-form h3 { font-size: 16px; margin-bottom: 18px; }
+  .pf-item { margin-bottom: 16px; }
+  .pf-item label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #374151;
+  }
+  .pf-item .req { color: #ef4444; }
+  .pf-item input[type=text],
+  .pf-item input[type=number],
+  .pf-item textarea {
+    width: 100%;
+    height: 34px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 0 10px;
+    font-size: 13px;
+    background: #fff;
+    color: #1f2937;
+    font-family: inherit;
+  }
+  .pf-item textarea { height: 64px; padding: 6px 10px; resize: vertical; }
+  .pf-item input:disabled { background: #f3f4f6; color: #6b7280; }
+  .pf-actions { display: flex; gap: 10px; margin-top: 8px; }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: #1f2937;
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity .2s, transform .2s;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- 顶部控制栏 -->
+<div class="topbar">
+  <div class="topbar-title">💾 表单引擎工作台 · 代码导出</div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="procCtx" style="font-size:12px;color:#6b7280;"></span>
+    <a class="topbar-link" href="process-list.html">← 返回流程列表</a>
+  </div>
+</div>
+
+<!-- 主体 -->
+<div class="workspace">
+  <!-- 左侧配置 -->
+  <div class="left-panel">
+    <div class="panel-title">导出配置</div>
+    <div class="panel-sub">基于编排 Schema 生成 Vue3 组件代码</div>
+
+    <div class="opt-section">
+      <h4>组件库</h4>
+      <label class="opt-row"><input type="radio" name="lib" value="element" checked>Element Plus</label>
+      <label class="opt-row"><input type="radio" name="lib" value="antd">Ant Design Vue</label>
+    </div>
+
+    <div class="opt-section">
+      <h4>代码风格</h4>
+      <label class="opt-row"><input type="radio" name="style" value="setup" checked>&lt;script setup&gt;</label>
+      <label class="opt-row"><input type="radio" name="style" value="options">Options API</label>
+    </div>
+
+    <div class="opt-section">
+      <h4>选项</h4>
+      <label class="opt-row"><input type="checkbox" id="optRules" checked>包含表单校验规则</label>
+      <label class="opt-row"><input type="checkbox" id="optPerm" checked>包含权限指令 v-permission</label>
+      <label class="opt-row"><input type="checkbox" id="optAction" checked>包含业务事件占位函数 doMethodProcess</label>
+      <label class="opt-row"><input type="checkbox" id="optShow">包含可见性指令 v-show</label>
+    </div>
+
+    <div class="opt-section">
+      <h4>模板信息</h4>
+      <div class="tmpl-info">
+        <div><span class="k">templateId：</span><span class="v">tmpl_001</span></div>
+        <div><span class="k">templateName：</span><span class="v">客车采购申请表单</span></div>
+        <div><span class="k">version：</span><span class="v">v1.0</span></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary btn-block" id="regenBtn">🔄 重新生成</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-block" id="downloadBtn">⬇ 下载 Vue 组件</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary btn-block" id="copyBtn">📋 复制代码</button>
+    </div>
+  </div>
+
+  <!-- 右侧预览 -->
+  <div class="right-panel">
+    <div class="tabs">
+      <div class="tab active" data-tab="vue">GeneratedForm.vue</div>
+      <div class="tab" data-tab="json">schema.json</div>
+      <div class="tab" data-tab="preview">预览渲染</div>
+    </div>
+    <div class="code-area">
+      <div class="code-panel" id="vuePanel"></div>
+      <div class="code-panel" id="jsonPanel" style="display:none;"></div>
+      <div id="previewPanel" style="display:none; height:100%; overflow:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 源 Schema（与表单引擎 tmpl_001 一致）===== */
+const SCHEMA = {
+  templateId: 'tmpl_001',
+  templateName: '客车采购申请表单',
+  version: 'v1.0',
+  layout: [
+    { type:'input', label:'客车型号', fieldKey:'bus_type', fieldType:'String', required:true, placeholder:'请输入客车型号', permissions:{applicant:'write',manager:'readonly',finance:'readonly'} },
+    { type:'number', label:'采购数量', fieldKey:'order_count', fieldType:'Integer', required:true, permissions:{applicant:'write',manager:'readonly',finance:'readonly'} },
+    { type:'input', label:'总金额', fieldKey:'total_price', fieldType:'BigDecimal', required:false, readonly:true, permissions:{applicant:'readonly',manager:'readonly',finance:'readonly'} },
+    { type:'textarea', label:'经理审批意见', fieldKey:'manager_opinion', fieldType:'String', required:false, permissions:{applicant:'hidden',manager:'write',finance:'readonly'} },
+    { type:'button', label:'检查库存', action:{ methodKey:'stockService.checkInventory', params:['bus_type','order_count'] } }
+  ]
+};
+
+/* ===== 读取当前选项 ===== */
+function getOpts() {
+  return {
+    lib: document.querySelector('input[name=lib]:checked').value,
+    style: document.querySelector('input[name=style]:checked').value,
+    rules: document.getElementById('optRules').checked,
+    perm: document.getElementById('optPerm').checked,
+    action: document.getElementById('optAction').checked,
+    show: document.getElementById('optShow').checked
+  };
+}
+
+/* ===== 组件标签映射 ===== */
+function tags(lib) {
+  if (lib === 'element') {
+    return { form:'el-form', item:'el-form-item', input:'el-input', number:'el-input-number', textarea:'el-input', button:'el-button' };
+  }
+  return { form:'a-form', item:'a-form-item', input:'a-input', number:'a-input-number', textarea:'a-textarea', button:'a-button' };
+}
+
+/* ===== 生成 Vue3 SFC ===== */
+function generateVue(opts) {
+  const t = tags(opts.lib);
+  const fields = SCHEMA.layout.filter(c => c.type !== 'button');
+  const btn = SCHEMA.layout.find(c => c.type === 'button');
+  const o = opts;
+
+  // template 部分
+  let tpl = '<template>\n';
+  tpl += `  <${t.form} :model="form" ${o.rules ? ':rules="rules" ' : ''}label-width="110px">\n`;
+  fields.forEach(f => {
+    // 权限：默认用 applicant 的权限
+    const perm = f.permissions.applicant;
+    const permAttr = o.perm ? ` v-permission="'${perm}'"` : '';
+    const showAttr = (o.show && f.permissions.applicant === 'hidden') ? ` v-show="false"` : '';
+    tpl += `    <${t.item} label="${f.label}" prop="${f.fieldKey}"${permAttr}${showAttr}>\n`;
+    if (f.readonly || perm === 'readonly') {
+      tpl += `      <${t.input} v-model="form.${f.fieldKey}" disabled placeholder="${f.placeholder || ''}" />\n`;
+    } else if (f.type === 'number') {
+      tpl += `      <${t.number} v-model="form.${f.fieldKey}" :min="0" controls-position="right" />\n`;
+    } else if (f.type === 'textarea') {
+      tpl += `      <${t.input} v-model="form.${f.fieldKey}" type="textarea" :rows="3" placeholder="${f.placeholder || ''}" />\n`;
+    } else {
+      tpl += `      <${t.input} v-model="form.${f.fieldKey}" placeholder="${f.placeholder || ''}" />\n`;
+    }
+    tpl += `    </${t.item}>\n`;
+  });
+  if (btn) {
+    tpl += `    <${t.item}>\n`;
+    tpl += `      <${t.button} type="primary" @click="onCheckInventory">${btn.label}</${t.button}>\n`;
+    tpl += `    </${t.item}>\n`;
+  }
+  tpl += `  </${t.form}>\n</template>\n`;
+
+  // script 部分
+  let scr = '';
+  if (o.style === 'setup') {
+    scr = '\n<script setup>\n';
+    scr += o.perm ? `// 权限指令：v-permission，控制字段可写/只读/隐藏\nconst vPermission = {\n  mounted(el, binding) {\n    const mode = binding.value\n    if (mode === 'hidden') el.style.display = 'none'\n    if (mode === 'readonly') el.querySelectorAll('input,textarea').forEach(i => i.disabled = true)\n  }\n}\n\n` : '';
+    scr += `import { reactive${o.rules ? ', ref ' : ''}} from 'vue'\n\n`;
+    scr += `// 表单数据模型\nconst form = reactive({\n`;
+    fields.forEach(f => {
+      const dv = f.fieldType === 'Integer' ? 0 : (f.fieldType === 'BigDecimal' ? 0 : "''");
+      scr += `  ${f.fieldKey}: ${dv},\n`;
+    });
+    scr += `})\n\n`;
+    if (o.rules) {
+      scr += `// 表单校验规则\nconst rules = reactive({\n`;
+      fields.filter(f => f.required).forEach(f => {
+        scr += `  ${f.fieldKey}: [{ required: true, message: '${f.label}不能为空', trigger: 'blur' }],\n`;
+      });
+      scr += `})\n\n`;
+    }
+    if (o.action) {
+      scr += `// 业务事件占位函数：调用后端业务方法\nfunction doMethodProcess(methodKey, params) {\n  // TODO: 替换为真实接口调用\n  console.log('[doMethodProcess]', methodKey, params)\n  return Promise.resolve({ success: true, data: {} })\n}\n\n`;
+      if (btn) {
+        scr += `// 检查库存按钮：绑定 stockService.checkInventory\nfunction onCheckInventory() {\n  doMethodProcess('${btn.action.methodKey}', {\n`;
+        btn.action.params.forEach(p => { scr += `    ${p}: form.${p},\n`; });
+        scr += `  }).then(res => {\n    // 业务返回后可更新表单字段，如 form.total_price = res.data.price\n  })\n}\n`;
+      }
+    }
+    scr += `<\/script>\n`;
+  } else {
+    // Options API
+    scr = '\n<script>\n';
+    scr += `export default {\n  name: 'GeneratedForm',\n`;
+    if (o.perm) {
+      scr += `  // 权限指令\n  directives: {\n    permission: {\n      mounted(el, binding) {\n        const mode = binding.value\n        if (mode === 'hidden') el.style.display = 'none'\n        if (mode === 'readonly') el.querySelectorAll('input,textarea').forEach(i => i.disabled = true)\n      }\n    }\n  },\n`;
+    }
+    scr += `  data() {\n    return {\n      form: {\n`;
+    fields.forEach(f => {
+      const dv = f.fieldType === 'Integer' ? 0 : (f.fieldType === 'BigDecimal' ? 0 : "''");
+      scr += `        ${f.fieldKey}: ${dv},\n`;
+    });
+    scr += `      }${o.rules ? ',' : ''}\n`;
+    if (o.rules) {
+      scr += `      rules: {\n`;
+      fields.filter(f => f.required).forEach(f => {
+        scr += `        ${f.fieldKey}: [{ required: true, message: '${f.label}不能为空', trigger: 'blur' }],\n`;
+      });
+      scr += `      }\n`;
+    }
+    scr += `    }\n  },\n`;
+    if (o.action) {
+      scr += `  methods: {\n`;
+      scr += `    // 业务事件占位函数\n    doMethodProcess(methodKey, params) {\n      console.log('[doMethodProcess]', methodKey, params)\n      return Promise.resolve({ success: true, data: {} })\n    },\n`;
+      if (btn) {
+        scr += `    // 检查库存\n    onCheckInventory() {\n      this.doMethodProcess('${btn.action.methodKey}', {\n`;
+        btn.action.params.forEach(p => { scr += `        ${p}: this.form.${p},\n`; });
+        scr += `      }).then(res => { /* 更新字段 */ })\n    }\n`;
+      }
+      scr += `  },\n`;
+    }
+    scr += `}\n<\/script>\n`;
+  }
+
+  return tpl + scr;
+}
+
+/* ===== 简易语法高亮 ===== */
+function highlight(code) {
+  // 先转义
+  let s = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // 注释
+  s = s.replace(/(\/\/[^\n]*)/g, '<span class="tok-com">$1</span>');
+  // 字符串
+  s = s.replace(/('[^']*')/g, '<span class="tok-str">$1</span>');
+  // 关键字
+  s = s.replace(/\b(import|from|const|let|function|return|export|default|reactive|ref|new|Promise|resolve|if|this)\b/g, '<span class="tok-kw">$1</span>');
+  // 数字
+  s = s.replace(/\b(\d+)\b/g, '<span class="tok-num">$1</span>');
+  // 标签 <el-form 等
+  s = s.replace(/(&lt;\/?)([a-zA-Z-]+)/g, '$1<span class="tok-tag">$2</span>');
+  // 属性 v-model= type= 等
+  s = s.replace(/(\s)([@v:a-zA-Z-]+)(=)/g, '$1<span class="tok-attr">$2</span>$3');
+  return s;
+}
+
+/* ===== 渲染预览表单 ===== */
+function renderPreview() {
+  const fields = SCHEMA.layout.filter(c => c.type !== 'button');
+  const btn = SCHEMA.layout.find(c => c.type === 'button');
+  let html = '<div class="preview-form"><h3>客车采购申请表单 · 预览渲染</h3>';
+  fields.forEach(f => {
+    const perm = f.permissions.applicant;
+    if (perm === 'hidden') return; // 隐藏不渲染
+    const disabled = f.readonly || perm === 'readonly' ? 'disabled' : '';
+    const inputType = f.type === 'number' ? 'number' : 'text';
+    const tag = f.type === 'textarea' ? 'textarea' : 'input';
+    html += `<div class="pf-item">
+      <label>${f.label}${f.required ? '<span class="req">*</span>' : ''}</label>
+      <${tag} ${f.type!=='textarea'?`type="${inputType}"`:''} placeholder="${f.placeholder || ''}" ${disabled}>${f.type==='textarea'?'':'\n'}</${tag}>
+    </div>`;
+  });
+  if (btn) {
+    html += `<div class="pf-actions"><button class="btn btn-primary" onclick="alert('触发业务方法：${btn.action.methodKey}')">${btn.label}</button></div>`;
+  }
+  html += '</div>';
+  document.getElementById('previewPanel').innerHTML = html;
+}
+
+/* ===== 主渲染 ===== */
+function render() {
+  const opts = getOpts();
+  const code = generateVue(opts);
+  document.getElementById('vuePanel').innerHTML = highlight(code);
+  document.getElementById('vuePanel').dataset.raw = code;
+  document.getElementById('jsonPanel').textContent = JSON.stringify(SCHEMA, null, 2);
+}
+
+/* ===== toast ===== */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+/* ===== Tab 切换 ===== */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    document.getElementById('vuePanel').style.display = which === 'vue' ? 'block' : 'none';
+    document.getElementById('jsonPanel').style.display = which === 'json' ? 'block' : 'none';
+    document.getElementById('previewPanel').style.display = which === 'preview' ? 'block' : 'none';
+    if (which === 'preview') renderPreview();
+  });
+});
+
+/* ===== 选项变更 → 实时重新生成 ===== */
+document.querySelectorAll('input[name=lib], input[name=style], input[type=checkbox]').forEach(el => {
+  el.addEventListener('change', render);
+});
+
+/* ===== 按钮 ===== */
+document.getElementById('regenBtn').addEventListener('click', () => {
+  render();
+  showToast('已重新生成代码');
+});
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const code = document.getElementById('vuePanel').dataset.raw || '';
+  const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'GeneratedForm.vue';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('已下载 GeneratedForm.vue');
+});
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const code = document.getElementById('vuePanel').dataset.raw || '';
+  try {
+    await navigator.clipboard.writeText(code);
+    showToast('已复制代码到剪贴板');
+  } catch (e) {
+    // 兜底
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('已复制代码到剪贴板');
+  }
+});
+
+/* 初始化 */
+// 读取 URL 流程上下文
+(function(){
+  const pid = new URLSearchParams(location.search).get('processId');
+  if (pid) {
+    const m = { 'proc_001':'客车采购申请流程','proc_002':'售后维修派单流程','proc_003':'员工请假审批流程','proc_004':'费用报销审批流程' };
+    document.getElementById('procCtx').textContent = '📋 当前流程：' + (m[pid] || pid);
+  }
+})();
+render();
+</script>
+</body>
+</html>

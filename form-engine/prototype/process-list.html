@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流程列表 · 表单引擎工作台</title>
+<style>
+  /* ===== 基础重置与设计变量 ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6fa;
+    color: #1f2937;
+    font-size: 14px;
+  }
+
+  /* ===== 顶部控制栏 ===== */
+  .topbar {
+    height: 56px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar-title { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .topbar-title .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #4f46e5; box-shadow: 0 0 0 4px #eef2ff;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-link { color: #6b7280; text-decoration: none; font-size: 13px; }
+  .topbar-link:hover { color: #4f46e5; }
+
+  /* ===== 按钮 ===== */
+  .btn {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s, border-color .15s, color .15s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .btn-primary { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .btn-primary:hover { background: #4338ca; border-color: #4338ca; }
+  .btn-secondary { background: #fff; color: #374151; border-color: #e5e7eb; }
+  .btn-secondary:hover { border-color: #4f46e5; color: #4f46e5; }
+  .btn-small { height: 28px; padding: 0 10px; font-size: 12px; }
+
+  /* 行内操作按钮（文字按钮）*/
+  .action-btn {
+    height: 26px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+  }
+  .action-btn:hover { background: #eef2ff; }
+  .action-design { color: #4f46e5; }
+  .action-design:hover { background: #eef2ff; }
+  .action-import { color: #0891b2; }
+  .action-import:hover { background: #ecfeff; }
+  .action-sim { color: #db2777; }
+  .action-sim:hover { background: #fdf2f8; }
+  .action-export { color: #059669; }
+  .action-export:hover { background: #ecfdf5; }
+
+  /* ===== 工具栏 ===== */
+  .toolbar {
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    position: relative;
+    flex: 1;
+    max-width: 360px;
+  }
+  .search-box input {
+    width: 100%;
+    height: 34px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0 12px 0 34px;
+    font-size: 13px;
+    background: #f9fafb;
+    color: #1f2937;
+    font-family: inherit;
+  }
+  .search-box input:focus { outline: none; border-color: #4f46e5; background: #fff; }
+  .search-box .icon { position: absolute; left: 10px; top: 8px; color: #9ca3af; font-size: 15px; }
+
+  .ui-select {
+    height: 34px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0 28px 0 10px;
+    font-size: 13px;
+    background: #fff;
+    color: #1f2937;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .stats {
+    margin-left: auto;
+    display: flex;
+    gap: 18px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .stats span b { color: #4f46e5; font-size: 14px; }
+
+  /* ===== 表格 ===== */
+  .table-wrap {
+    padding: 16px 24px;
+  }
+  .table-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: #f9fafb;
+    color: #6b7280;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #fafbff; }
+
+  .proc-name { font-weight: 600; color: #1f2937; }
+  .proc-code { font-size: 12px; color: #9ca3af; font-family: 'SF Mono', Menlo, monospace; }
+  .tmpl-name { color: #374151; }
+  .tmpl-ver { font-size: 11px; color: #9ca3af; background: #f3f4f6; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+
+  /* 状态标签 */
+  .status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  .status-draft { background: #f3f4f6; color: #6b7280; }
+  .status-imported { background: #dbeafe; color: #1d4ed8; }
+  .status-simulated { background: #fce7f3; color: #be185d; }
+  .status-exported { background: #d1fae5; color: #047857; }
+
+  .actions-cell { white-space: nowrap; }
+  .actions-cell .action-btn { margin-right: 2px; }
+  .actions-cell .divider { color: #e5e7eb; margin: 0 2px; }
+
+  .updated { font-size: 12px; color: #9ca3af; white-space: nowrap; }
+
+  /* ===== 弹窗 ===== */
+  .modal-mask {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 10px;
+    width: 820px;
+    max-width: 94vw;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  }
+  .modal-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-head h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .modal-head .close { cursor: pointer; color: #6b7280; font-size: 22px; line-height: 1; }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .modal-foot {
+    padding: 14px 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f9fafb;
+  }
+
+  .modal-sec { margin-bottom: 20px; }
+  .modal-sec h4 { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #374151; }
+  .json-editor {
+    width: 100%;
+    height: 180px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    background: #1e1e2e;
+    color: #e5e7eb;
+    resize: vertical;
+  }
+  .node-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .node-table th, .node-table td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
+  .node-table th { background: #f9fafb; color: #6b7280; font-weight: 600; }
+  .node-table select {
+    height: 28px; border: 1px solid #e5e7eb; border-radius: 4px; padding: 0 6px; font-size: 12px; background: #fff; font-family: inherit;
+  }
+  .hint { font-size: 12px; color: #9ca3af; margin-top: 6px; }
+  .hint.ok { color: #059669; }
+  .hint.err { color: #dc2626; }
+
+  /* 新建流程弹窗 */
+  .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; }
+  .form-row label { width: 90px; font-size: 13px; color: #6b7280; flex-shrink: 0; }
+  .form-row input, .form-row select {
+    flex: 1; height: 34px; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0 10px; font-size: 13px; background: #fff; font-family: inherit;
+  }
+
+  /* toast */
+  .toast {
+    position: fixed; top: 70px; left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: #1f2937; color: #fff;
+    padding: 10px 20px; border-radius: 6px; font-size: 13px;
+    opacity: 0; transition: opacity .2s, transform .2s;
+    z-index: 200; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .empty-row { text-align: center; color: #9ca3af; padding: 40px; font-size: 13px; }
+
+  /* 顶部架构说明条 */
+  .arch-bar {
+    background: linear-gradient(90deg, #eef2ff, #fdf2f8);
+    border-bottom: 1px solid #e5e7eb;
+    padding: 10px 24px;
+    font-size: 12px;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .arch-bar b { color: #4338ca; }
+</style>
+</head>
+<body>
+
+<!-- 顶部控制栏 -->
+<div class="topbar">
+  <div class="topbar-title"><span class="dot"></span> 表单引擎工作台 · 流程列表</div>
+  <div class="topbar-right">
+    <a class="topbar-link" href="index.html">← 返回首页</a>
+  </div>
+</div>
+
+<!-- 架构说明条 -->
+<div class="arch-bar">
+  📐 <span>架构：以<b>流程列表</b>为主入口（类 jeecg-boot），每行集成 <b>设计表单</b> · <b>导入流程</b> · <b>仿真测试</b> · <b>导出代码</b> 四大能力</span>
+</div>
+
+<!-- 工具栏 -->
+<div class="toolbar">
+  <div class="search-box">
+    <span class="icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="搜索流程名称 / 编码...">
+  </div>
+  <select class="ui-select" id="uiSelect" title="目标 UI 框架（影响设计与导出）">
+    <option value="element">UI 框架：Element Plus</option>
+    <option value="antd">UI 框架：Ant Design Vue</option>
+    <option value="naive">UI 框架：Naive UI</option>
+  </select>
+  <button class="btn btn-primary" id="newProcBtn">+ 新建流程</button>
+  <div class="stats">
+    <span>共 <b id="totalCount">0</b> 个流程</span>
+    <span>已导入 <b id="importedCount">0</b></span>
+    <span>已导出 <b id="exportedCount">0</b></span>
+  </div>
+</div>
+
+<!-- 表格 -->
+<div class="table-wrap">
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>流程名称 / 编码</th>
+          <th>表单模板</th>
+          <th>流程状态</th>
+          <th>更新时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 导入流程弹窗 -->
+<div class="modal-mask" id="importModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>📥 导入流程配置 · <span id="importProcName" style="color:#6b7280;font-weight:400;"></span></h3>
+      <span class="close" id="closeImport">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sec">
+        <h4>① 流程引擎导出的流程定义 JSON</h4>
+        <textarea class="json-editor" id="processDefJson"></textarea>
+        <div class="hint" id="importHint">粘贴流程引擎导出的 processDefinition（含节点列表 + 表单绑定关系）。点击"解析"自动提取节点。</div>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button class="btn btn-secondary btn-small" id="parseBtn">🔍 解析流程定义</button>
+          <button class="btn btn-secondary btn-small" id="fillSampleBtn">填充示例</button>
+        </div>
+      </div>
+      <div class="modal-sec">
+        <h4>② 节点 - 表单 - 角色绑定配置</h4>
+        <table class="node-table" id="nodeTable">
+          <thead>
+            <tr><th>节点 ID</th><th>节点名称</th><th>角色</th><th>关联表单模板</th><th>可触发业务方法</th></tr>
+          </thead>
+          <tbody><tr><td colspan="5" style="text-align:center;color:#9ca3af;">请先解析流程定义</td></tr></tbody>
+        </table>
+      </div>
+      <div class="modal-sec">
+        <h4>③ 权限矩阵预览（按角色 × 字段）</h4>
+        <table class="node-table" id="permPreview">
+          <thead>
+            <tr><th>字段</th><th>申请人</th><th>部门经理</th><th>财务总监</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>bus_type 客车型号</td><td>可写</td><td>只读</td><td>只读</td></tr>
+            <tr><td>order_count 采购数量</td><td>可写</td><td>只读</td><td>只读</td></tr>
+            <tr><td>total_price 总金额</td><td>只读</td><td>只读</td><td>只读</td></tr>
+            <tr><td>manager_opinion 经理审批意见</td><td>隐藏</td><td>可写</td><td>只读</td></tr>
+          </tbody>
+        </table>
+        <div class="hint">导入后可在"设计表单"中逐字段调整权限矩阵。</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" id="cancelImport">取消</button>
+      <button class="btn btn-primary" id="confirmImport">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新建流程弹窗 -->
+<div class="modal-mask" id="newModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head">
+      <h3>➕ 新建流程</h3>
+      <span class="close" id="closeNew">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>流程名称</label>
+        <input type="text" id="newProcName" placeholder="如：客车采购申请流程">
+      </div>
+      <div class="form-row">
+        <label>流程编码</label>
+        <input type="text" id="newProcCode" placeholder="如：PROC_BUS_001">
+      </div>
+      <div class="form-row">
+        <label>表单模板</label>
+        <select id="newTmpl">
+          <option value="tmpl_001">tmpl_001 客车采购申请表单 v1.0</option>
+          <option value="tmpl_002">tmpl_002 售后维修派单表 v2.1</option>
+        </select>
+      </div>
+      <div class="hint">新建后状态为"草稿"，可继续设计表单、导入流程配置。</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" id="cancelNew">取消</button>
+      <button class="btn btn-primary" id="confirmNew">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== Mock 数据：流程列表 ===== */
+let PROCESSES = [
+  {
+    processId: 'proc_001',
+    processName: '客车采购申请流程',
+    processCode: 'PROC_BUS_001',
+    templateId: 'tmpl_001',
+    templateName: '客车采购申请表单',
+    version: 'v1.0',
+    status: 'imported',
+    updatedAt: '2026-07-06 09:30'
+  },
+  {
+    processId: 'proc_002',
+    processName: '售后维修派单流程',
+    processCode: 'PROC_REPAIR_002',
+    templateId: 'tmpl_002',
+    templateName: '售后维修派单表',
+    version: 'v2.1',
+    status: 'draft',
+    updatedAt: '2026-07-05 16:12'
+  },
+  {
+    processId: 'proc_003',
+    processName: '员工请假审批流程',
+    processCode: 'PROC_LEAVE_003',
+    templateId: 'tmpl_003',
+    templateName: '请假申请表',
+    version: 'v1.2',
+    status: 'exported',
+    updatedAt: '2026-07-04 11:45'
+  },
+  {
+    processId: 'proc_004',
+    processName: '费用报销审批流程',
+    processCode: 'PROC_EXP_004',
+    templateId: 'tmpl_004',
+    templateName: '费用报销单',
+    version: 'v1.0',
+    status: 'simulated',
+    updatedAt: '2026-07-06 08:20'
+  }
+];
+
+const STATUS_MAP = {
+  draft: { label: '草稿', cls: 'status-draft' },
+  imported: { label: '已导入', cls: 'status-imported' },
+  simulated: { label: '已仿真', cls: 'status-simulated' },
+  exported: { label: '已导出', cls: 'status-exported' }
+};
+
+let currentImportProc = null;
+
+/* ===== 工具函数 ===== */
+const $ = (s) => document.querySelector(s);
+
+function showToast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+/* ===== 渲染表格 ===== */
+function renderTable(filter = '') {
+  const tbody = $('#tableBody');
+  const list = PROCESSES.filter(p => {
+    if (!filter) return true;
+    const kw = filter.toLowerCase();
+    return p.processName.toLowerCase().includes(kw) || p.processCode.toLowerCase().includes(kw);
+  });
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">未找到匹配的流程</td></tr>';
+  } else {
+    tbody.innerHTML = list.map(p => {
+      const st = STATUS_MAP[p.status] || STATUS_MAP.draft;
+      return `<tr data-id="${p.processId}">
+        <td>
+          <div class="proc-name">${escapeHtml(p.processName)}</div>
+          <div class="proc-code">${escapeHtml(p.processCode)}</div>
+        </td>
+        <td>
+          <span class="tmpl-name">${escapeHtml(p.templateName)}</span>
+          <span class="tmpl-ver">${escapeHtml(p.version)}</span>
+        </td>
+        <td><span class="status-tag ${st.cls}">${st.label}</span></td>
+        <td class="updated">${escapeHtml(p.updatedAt)}</td>
+        <td class="actions-cell">
+          <button class="action-btn action-design" data-act="design" data-id="${p.processId}">🎨 设计表单</button>
+          <span class="divider">|</span>
+          <button class="action-btn action-import" data-act="import" data-id="${p.processId}">📥 导入流程</button>
+          <span class="divider">|</span>
+          <button class="action-btn action-sim" data-act="sim" data-id="${p.processId}">🧪 仿真测试</button>
+          <span class="divider">|</span>
+          <button class="action-btn action-export" data-act="export" data-id="${p.processId}">💾 导出代码</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // 统计
+  $('#totalCount').textContent = PROCESSES.length;
+  $('#importedCount').textContent = PROCESSES.filter(p => p.status === 'imported' || p.status === 'simulated' || p.status === 'exported').length;
+  $('#exportedCount').textContent = PROCESSES.filter(p => p.status === 'exported').length;
+}
+
+/* ===== 行级操作 ===== */
+$('#tableBody').addEventListener('click', (e) => {
+  const btn = e.target.closest('.action-btn');
+  if (!btn) return;
+  const act = btn.dataset.act;
+  const id = btn.dataset.id;
+  const proc = PROCESSES.find(p => p.processId === id);
+  if (!proc) return;
+
+  if (act === 'design') {
+    // 跳转表单设计器，携带流程上下文
+    location.href = `form-designer.html?processId=${id}`;
+  } else if (act === 'import') {
+    openImportModal(proc);
+  } else if (act === 'sim') {
+    location.href = `process-simulation.html?processId=${id}`;
+  } else if (act === 'export') {
+    location.href = `code-export.html?processId=${id}`;
+  }
+});
+
+/* ===== 导入流程弹窗 ===== */
+function openImportModal(proc) {
+  currentImportProc = proc;
+  $('#importProcName').textContent = proc.processName;
+  $('#processDefJson').value = '';
+  $('#importHint').className = 'hint';
+  $('#importHint').textContent = '粘贴流程引擎导出的 processDefinition（含节点列表 + 表单绑定关系）。点击"解析"自动提取节点。';
+  $('#nodeTable').querySelector('tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">请先解析流程定义</td></tr>';
+  $('#importModal').classList.add('show');
+}
+
+$('#closeImport').addEventListener('click', () => $('#importModal').classList.remove('show'));
+$('#cancelImport').addEventListener('click', () => $('#importModal').classList.remove('show'));
+
+// 填充示例
+$('#fillSampleBtn').addEventListener('click', () => {
+  const sample = {
+    processDefId: 'pd_bus_purchase',
+    processName: '客车采购申请流程',
+    nodes: [
+      { nodeId: 'n1', name: '申请', role: 'applicant' },
+      { nodeId: 'n2', name: '经理审批', role: 'manager' },
+      { nodeId: 'n3', name: '财务复核', role: 'finance' }
+    ]
+  };
+  $('#processDefJson').value = JSON.stringify(sample, null, 2);
+  $('#importHint').className = 'hint';
+  $('#importHint').textContent = '已填充示例 JSON，点击"解析流程定义"提取节点。';
+});
+
+// 解析流程定义
+$('#parseBtn').addEventListener('click', () => {
+  const raw = $('#processDefJson').value.trim();
+  if (!raw) {
+    $('#importHint').className = 'hint err';
+    $('#importHint').textContent = '✗ 请先粘贴流程定义 JSON';
+    return;
+  }
+  try {
+    const def = JSON.parse(raw);
+    const nodes = def.nodes || [];
+    if (nodes.length === 0) {
+      $('#importHint').className = 'hint err';
+      $('#importHint').textContent = '✗ 未找到节点信息';
+      return;
+    }
+    // 渲染节点配置表
+    const roles = ['applicant 申请人', 'manager 部门经理', 'finance 财务总监'];
+    const tmpls = ['tmpl_001 客车采购申请表单', 'tmpl_002 售后维修派单表'];
+    const methods = ['（无）', 'busService.calculateDiscount 计算折扣', 'stockService.checkInventory 检查库存'];
+    const tbody = $('#nodeTable').querySelector('tbody');
+    tbody.innerHTML = nodes.map(n => `
+      <tr>
+        <td>${escapeHtml(n.nodeId)}</td>
+        <td>${escapeHtml(n.name)}</td>
+        <td>
+          <select>
+            ${roles.map(r => {
+              const val = r.split(' ')[0];
+              return `<option value="${val}" ${n.role===val?'selected':''}>${r}</option>`;
+            }).join('')}
+          </select>
+        </td>
+        <td>
+          <select>
+            ${tmpls.map(t => `<option>${t}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <select>
+            ${methods.map(m => `<option>${m}</option>`).join('')}
+          </select>
+        </td>
+      </tr>`).join('');
+    $('#importHint').className = 'hint ok';
+    $('#importHint').textContent = `✓ 解析成功，共 ${nodes.length} 个节点。可在上方配置节点-表单-角色绑定。`;
+  } catch (err) {
+    $('#importHint').className = 'hint err';
+    $('#importHint').textContent = '✗ JSON 格式错误：' + err.message;
+  }
+});
+
+// 确认导入
+$('#confirmImport').addEventListener('click', () => {
+  if (!currentImportProc) return;
+  const nodeRows = $('#nodeTable').querySelectorAll('tbody tr');
+  if (nodeRows.length === 0 || nodeRows[0].cells.length < 2) {
+    showToast('请先解析流程定义');
+    return;
+  }
+  currentImportProc.status = 'imported';
+  currentImportProc.updatedAt = '2026-07-06 ' + new Date().toTimeString().slice(0, 5);
+  $('#importModal').classList.remove('show');
+  renderTable($('#searchInput').value);
+  showToast(`✓ 已导入流程配置：${currentImportProc.processName}`);
+});
+
+/* ===== 新建流程 ===== */
+$('#newProcBtn').addEventListener('click', () => {
+  $('#newProcName').value = '';
+  $('#newProcCode').value = '';
+  $('#newModal').classList.add('show');
+});
+$('#closeNew').addEventListener('click', () => $('#newModal').classList.remove('show'));
+$('#cancelNew').addEventListener('click', () => $('#newModal').classList.remove('show'));
+$('#confirmNew').addEventListener('click', () => {
+  const name = $('#newProcName').value.trim();
+  const code = $('#newProcCode').value.trim();
+  const tmplSel = $('#newTmpl').value;
+  if (!name || !code) {
+    showToast('请填写流程名称和编码');
+    return;
+  }
+  const tmplMap = { tmpl_001: ['tmpl_001','客车采购申请表单','v1.0'], tmpl_002: ['tmpl_002','售后维修派单表','v2.1'] };
+  const t = tmplMap[tmplSel];
+  const newId = 'proc_' + String(PROCESSES.length + 1).padStart(3, '0');
+  PROCESSES.unshift({
+    processId: newId,
+    processName: name,
+    processCode: code,
+    templateId: t[0],
+    templateName: t[1],
+    version: t[2],
+    status: 'draft',
+    updatedAt: '2026-07-06 ' + new Date().toTimeString().slice(0, 5)
+  });
+  $('#newModal').classList.remove('show');
+  renderTable();
+  showToast(`✓ 已创建流程：${name}`);
+});
+
+/* ===== 搜索 ===== */
+$('#searchInput').addEventListener('input', (e) => renderTable(e.target.value));
+
+/* ===== UI 框架切换（演示）===== */
+$('#uiSelect').addEventListener('change', (e) => {
+  const map = { element: 'Element Plus', antd: 'Ant Design Vue', naive: 'Naive UI' };
+  showToast(`已切换 UI 框架：${map[e.target.value]}（影响设计与导出）`);
+});
+
+/* 初始化 */
+renderTable();
+</script>
+</body>
+</html>

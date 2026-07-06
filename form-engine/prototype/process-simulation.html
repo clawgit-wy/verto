@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流程仿真测试 · 表单引擎工作台</title>
+<style>
+  /* ===== 基础重置与设计变量 ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6fa;
+    color: #1f2937;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== 顶部控制栏 ===== */
+  .topbar {
+    height: 56px;
+    flex-shrink: 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+  .topbar-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1f2937;
+  }
+  .topbar-link {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .topbar-link:hover { color: #4f46e5; }
+
+  /* ===== 第二行工具栏 ===== */
+  .toolbar {
+    flex-shrink: 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    height: 52px;
+  }
+  .tb-group { display: flex; align-items: center; gap: 8px; }
+  .tb-label { font-size: 12px; color: #6b7280; }
+  select {
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    color: #1f2937;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+  }
+  select:focus { border-color: #4f46e5; }
+
+  /* ===== 按钮 ===== */
+  .btn-primary {
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: inherit;
+  }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: #fff;
+    color: #4f46e5;
+    border: 1px solid #4f46e5;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: inherit;
+  }
+  .btn-secondary:hover { background: #eef2ff; }
+  .btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-link {
+    background: none;
+    border: none;
+    color: #4f46e5;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    font-family: inherit;
+  }
+  .btn-link:hover { text-decoration: underline; }
+
+  /* ===== 主区域三栏布局 ===== */
+  .main {
+    flex: 1;
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+  .panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    padding: 12px;
+    overflow-y: auto;
+  }
+  .left-panel { width: 220px; flex-shrink: 0; }
+  .center-panel { flex: 1; overflow-y: auto; }
+  .right-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  /* ===== 流程节点 ===== */
+  .node {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    transition: all .2s;
+  }
+  .node.current {
+    border-left: 3px solid #4f46e5;
+    background: #eef2ff;
+  }
+  .node.completed { opacity: .65; }
+  .node-icon {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #9ca3af;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .node.current .node-icon { color: #4f46e5; }
+  .node.completed .node-icon { color: #10b981; }
+  .node-name { font-size: 13px; font-weight: 600; color: #1f2937; }
+  .node-role { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+  /* ===== 表单区 ===== */
+  .form-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .form-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+  }
+  .form-sub {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .field-card { margin-bottom: 14px; }
+  .field-label {
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 6px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .field-card input,
+  .field-card textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #1f2937;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+    resize: vertical;
+  }
+  .field-card input:focus,
+  .field-card textarea:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+  }
+  .field-card input:disabled,
+  .field-card textarea:disabled {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+  }
+  .badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+  .badge-write { background: #eef2ff; color: #4f46e5; }
+  .badge-readonly { background: #f3f4f6; color: #6b7280; }
+  .badge-tamper { background: #fef2f2; color: #ef4444; }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+  .form-hint {
+    margin-top: 14px;
+    padding: 8px 10px;
+    background: #eef2ff;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #4f46e5;
+    line-height: 1.5;
+  }
+
+  /* ===== 测试记录 ===== */
+  .trace-list { flex: 1; overflow-y: auto; }
+  .trace-item {
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: #fff;
+    transition: all .2s;
+  }
+  .trace-item.replay-active {
+    border-color: #4f46e5;
+    background: #eef2ff;
+    box-shadow: 0 0 0 2px rgba(79,70,229,.2);
+    transform: scale(1.02);
+  }
+  .trace-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+  .trace-step { color: #4f46e5; font-weight: 700; }
+  .trace-node { color: #374151; }
+  .trace-time { color: #9ca3af; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .trace-body { font-size: 12px; display: flex; gap: 8px; align-items: center; }
+  .trace-role { color: #6b7280; }
+  .trace-action { color: #1f2937; font-weight: 500; }
+  .trace-empty {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 30px 0;
+  }
+
+  /* ===== Toast 提示 ===== */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1f2937;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all .25s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    max-width: 80%;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { background: #10b981; }
+  .toast.error { background: #ef4444; }
+
+  /* 滚动条美化 */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+</style>
+</head>
+<body>
+  <!-- 顶部控制栏 -->
+  <div class="topbar">
+    <div class="topbar-title">👥 表单引擎工作台 · 流程仿真测试</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span id="procCtx" style="font-size:12px;color:#6b7280;"></span>
+      <a class="topbar-link" href="process-list.html">← 返回流程列表</a>
+    </div>
+  </div>
+
+  <!-- 第二行工具栏 -->
+  <div class="toolbar">
+    <div class="tb-group">
+      <label class="tb-label">当前角色</label>
+      <select id="roleSelect">
+        <option value="applicant">🙋 申请人</option>
+        <option value="manager">👔 部门经理</option>
+        <option value="finance">💰 财务总监</option>
+      </select>
+    </div>
+    <button id="flowBtn" class="btn-primary">模拟流转 →</button>
+    <button id="replayBtn" class="btn-secondary">▶ 回放测试</button>
+    <div class="tb-group">
+      <label class="tb-label">异常注入</label>
+      <select id="injectSelect">
+        <option value="无">无</option>
+        <option value="必填校验失败">必填校验失败</option>
+        <option value="业务方法异常">业务方法异常</option>
+        <option value="越权操作">越权操作</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <!-- 左：流程节点 -->
+    <div class="left-panel panel">
+      <div class="panel-title">流程节点</div>
+      <div id="nodeList"></div>
+    </div>
+
+    <!-- 中：表单渲染区 -->
+    <div class="center-panel">
+      <div id="formArea"></div>
+    </div>
+
+    <!-- 右：测试记录 -->
+    <div class="right-panel panel">
+      <div class="panel-title">
+        <span>测试记录</span>
+        <button id="clearTraceBtn" class="btn-link">清空记录</button>
+      </div>
+      <div id="traceList" class="trace-list"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+<script>
+/* =========================================================
+ * 流程仿真测试 —— 仿真模式
+ * 说明：基于权限矩阵驱动表单渲染，模拟多角色流转与异常注入
+ * ========================================================= */
+
+// 字段定义
+const FIELDS = [
+  { key: 'bus_type',        label: '客车型号',     type: 'text' },
+  { key: 'order_count',     label: '采购数量',     type: 'number' },
+  { key: 'total_price',     label: '总金额',       type: 'text' },
+  { key: 'manager_opinion', label: '经理审批意见', type: 'textarea' }
+];
+
+// 权限矩阵：每个字段在不同角色下的权限
+const PERMISSION_MATRIX = {
+  bus_type:        { applicant: 'write',    manager: 'readonly', finance: 'readonly' },
+  order_count:     { applicant: 'write',    manager: 'readonly', finance: 'readonly' },
+  total_price:     { applicant: 'readonly', manager: 'readonly', finance: 'readonly' },
+  manager_opinion: { applicant: 'hidden',   manager: 'write',    finance: 'readonly' }
+};
+
+// 流程节点定义
+const NODES = [
+  { id: 'n1', name: '申请',     role: 'applicant', roleLabel: '申请人' },
+  { id: 'n2', name: '经理审批', role: 'manager',   roleLabel: '部门经理' },
+  { id: 'n3', name: '财务复核', role: 'finance',   roleLabel: '财务总监' }
+];
+
+// 角色标签与图标
+const ROLE_LABELS = { applicant: '申请人', manager: '部门经理', finance: '财务总监' };
+const ROLE_ICONS  = { applicant: '🙋',    manager: '👔',       finance: '💰' };
+
+// 全局状态
+const state = {
+  currentNodeIndex: 0,        // 当前节点下标
+  currentRole: 'applicant',   // 当前角色（视角）
+  formData: {                 // 表单数据
+    bus_type: '纯电动大巴 KingLong-12',
+    order_count: 10,
+    total_price: 5000000,
+    manager_opinion: ''
+  },
+  trace: [],                  // 测试记录（最新在前）
+  stepCounter: 0              // 步骤计数
+};
+
+// DOM 引用
+const roleSelect   = document.getElementById('roleSelect');
+const injectSelect = document.getElementById('injectSelect');
+
+/* ---------- 工具函数 ---------- */
+
+// HTML 转义，防止用户输入破坏结构
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// 字段显示值（总金额做千分位格式化）
+function displayValue(key, val) {
+  if (val === '' || val === null || val === undefined) return '';
+  if (key === 'total_price') return Number(val).toLocaleString('zh-CN');
+  return String(val);
+}
+
+// Toast 提示
+let toastTimer = null;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 2500);
+}
+
+/* ---------- 核心 Mock：getFormFieldValueList ---------- */
+// 根据角色返回表单值与权限矩阵
+function getFormFieldValueList(role) {
+  const permissions = {};
+  for (const f of FIELDS) {
+    permissions[f.key] = PERMISSION_MATRIX[f.key][role];
+  }
+  return { values: { ...state.formData }, permissions };
+}
+
+/* ---------- 核心 Mock：doMethodProcess ---------- */
+// 模拟调用业务方法，返回 Promise
+function doMethodProcess(method, params) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      if (method === 'stockService.checkInventory') {
+        // 库存检查：按 数量 * 单价 * 0.9(折扣) 计算总金额
+        const count = Number(params.order_count) || 0;
+        const price = Math.round(count * 500000 * 0.9);
+        resolve({ success: true, total_price: price, message: '库存充足' });
+      } else {
+        resolve({ success: false, message: '未知方法' });
+      }
+    }, 600);
+  });
+}
+
+/* ---------- 渲染：流程节点 ---------- */
+function renderNodes() {
+  const html = NODES.map((n, i) => {
+    const isCurrent   = i === state.currentNodeIndex;
+    const isCompleted = i < state.currentNodeIndex;
+    const cls = 'node' + (isCurrent ? ' current' : (isCompleted ? ' completed' : ''));
+    const icon = isCompleted ? '✓' : (isCurrent ? '●' : '○');
+    return `<div class="${cls}">
+      <span class="node-icon">${icon}</span>
+      <div class="node-info">
+        <div class="node-name">${n.id} ${n.name}</div>
+        <div class="node-role">${ROLE_ICONS[n.role]} ${ROLE_LABELS[n.role]}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('nodeList').innerHTML = html;
+}
+
+/* ---------- 渲染：表单区（权限驱动） ---------- */
+function renderForm() {
+  const { values, permissions } = getFormFieldValueList(state.currentRole);
+  const node = NODES[state.currentNodeIndex];
+  const inject = injectSelect.value;
+
+  // 越权注入：申请人强行可见 manager_opinion（模拟客户端篡改）
+  const isTamperField = (key) =>
+    inject === '越权操作' && state.currentRole === 'applicant' && key === 'manager_opinion';
+
+  const fieldsHtml = FIELDS.map(f => {
+    const perm = permissions[f.key];
+    const tampered = isTamperField(f.key);
+    // hidden 且未被篡改 → 不渲染
+    if (perm === 'hidden' && !tampered) return '';
+
+    // 有效权限：被篡改时视为 write
+    const effectivePerm = tampered ? 'write' : perm;
+
+    // 构建控件
+    let control = '';
+    const valDisp = effectivePerm === 'write' ? esc(values[f.key]) : esc(displayValue(f.key, values[f.key]));
+    if (effectivePerm === 'write') {
+      if (f.type === 'textarea') {
+        control = `<textarea data-key="${f.key}" rows="3">${valDisp}</textarea>`;
+      } else if (f.type === 'number') {
+        control = `<input type="number" data-key="${f.key}" value="${esc(values[f.key])}">`;
+      } else {
+        control = `<input type="text" data-key="${f.key}" value="${esc(values[f.key])}">`;
+      }
+    } else {
+      // readonly：禁用输入框 + 灰色背景
+      if (f.type === 'textarea') {
+        control = `<textarea data-key="${f.key}" rows="3" disabled>${valDisp}</textarea>`;
+      } else {
+        control = `<input type="text" data-key="${f.key}" value="${valDisp}" disabled>`;
+      }
+    }
+
+    // 权限标签
+    let badge;
+    if (tampered) {
+      badge = '<span class="badge badge-tamper">⚠ 越权</span>';
+    } else if (effectivePerm === 'write') {
+      badge = '<span class="badge badge-write">可编辑</span>';
+    } else {
+      badge = '<span class="badge badge-readonly">只读</span>';
+    }
+
+    return `<div class="field-card">
+      <div class="field-label">${f.label} ${badge}</div>
+      ${control}
+    </div>`;
+  }).join('');
+
+  const actionsHtml = `
+    <div class="form-actions">
+      <button id="checkBtn" class="btn-secondary">检查库存</button>
+      <button id="submitBtn" class="btn-primary">提交</button>
+    </div>
+    <div class="form-hint">💡 切换「当前角色」可实时观察字段权限矩阵变化（可编辑 / 只读 / 隐藏）</div>`;
+
+  document.getElementById('formArea').innerHTML = `
+    <div class="form-card">
+      <div class="form-title">${node.id} ${node.name} · ${ROLE_ICONS[state.currentRole]} ${ROLE_LABELS[state.currentRole]}</div>
+      <div class="form-sub">当前节点角色视角下的表单渲染（权限驱动）</div>
+      ${fieldsHtml}
+      ${actionsHtml}
+    </div>`;
+
+  // 绑定按钮事件
+  document.getElementById('checkBtn').addEventListener('click', checkInventory);
+  document.getElementById('submitBtn').addEventListener('click', submit);
+
+  // 绑定输入框：实时回写 formData
+  document.querySelectorAll('#formArea [data-key]').forEach(el => {
+    el.addEventListener('input', e => {
+      const k = e.target.dataset.key;
+      let v = e.target.value;
+      if (e.target.type === 'number') {
+        v = v === '' ? '' : Number(v);
+      }
+      state.formData[k] = v;
+    });
+  });
+}
+
+/* ---------- 渲染：测试记录 ---------- */
+function renderTrace() {
+  const list = document.getElementById('traceList');
+  if (state.trace.length === 0) {
+    list.innerHTML = '<div class="trace-empty">暂无测试记录</div>';
+    return;
+  }
+  list.innerHTML = state.trace.map((t, i) => `
+    <div class="trace-item" data-idx="${i}">
+      <div class="trace-head">
+        <span class="trace-step">#${t.step}</span>
+        <span class="trace-node">${t.nodeId} ${t.nodeName}</span>
+        <span class="trace-time">${t.time}</span>
+      </div>
+      <div class="trace-body">
+        <span class="trace-role">${ROLE_ICONS[t.role]} ${t.roleLabel}</span>
+        <span class="trace-action">${esc(t.action)}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* ---------- 推入测试记录 ---------- */
+function pushTrace(action) {
+  state.stepCounter++;
+  const node = NODES[state.currentNodeIndex];
+  state.trace.unshift({
+    step: state.stepCounter,
+    nodeId: node.id,
+    nodeName: node.name,
+    role: state.currentRole,
+    roleLabel: ROLE_LABELS[state.currentRole],
+    action,
+    time: new Date().toLocaleTimeString('zh-CN', { hour12: false })
+  });
+  renderTrace();
+}
+
+/* ---------- 业务动作：检查库存 ---------- */
+async function checkInventory() {
+  const inject = injectSelect.value;
+
+  // 异常注入：业务方法异常
+  if (inject === '业务方法异常') {
+    showToast('✗ 库存服务异常：连接超时', 'error');
+    pushTrace('检查库存（异常注入）');
+    return;
+  }
+
+  // 按钮进入 loading 态
+  const btn = document.getElementById('checkBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '检查中...'; }
+
+  // 调用 mock 业务方法
+  const result = await doMethodProcess('stockService.checkInventory', {
+    bus_type: state.formData.bus_type,
+    order_count: state.formData.order_count
+  });
+
+  if (result.success) {
+    state.formData.total_price = result.total_price;
+    renderForm();
+    showToast('✓ 库存充足，已更新总金额', 'success');
+    pushTrace('检查库存');
+  }
+}
+
+/* ---------- 业务动作：提交 ---------- */
+function submit() {
+  const inject = injectSelect.value;
+  const role = state.currentRole;
+
+  // 异常注入：越权操作（申请人尝试操作隐藏字段）
+  if (inject === '越权操作' && role === 'applicant') {
+    showToast('✗ 越权操作：当前角色无权操作该字段', 'error');
+    pushTrace('提交（越权拦截）');
+    return;
+  }
+
+  // 异常注入：必填校验失败（强制触发）
+  if (inject === '必填校验失败') {
+    showToast('✗ 必填项不能为空', 'error');
+    pushTrace('提交（校验失败）');
+    return;
+  }
+
+  // 正常必填校验
+  let required = [];
+  if (role === 'applicant') required = ['bus_type', 'order_count'];
+  else if (role === 'manager') required = ['manager_opinion'];
+
+  for (const k of required) {
+    const v = state.formData[k];
+    if (v === '' || v === null || v === undefined) {
+      showToast('✗ 必填项不能为空', 'error');
+      pushTrace('提交（校验失败）');
+      return;
+    }
+  }
+
+  pushTrace('提交');
+
+  // 在最后节点 n3，提交即完成
+  if (state.currentNodeIndex === NODES.length - 1) {
+    showToast('✓ 流程已完成', 'success');
+    return;
+  }
+
+  // 自动流转至下一节点
+  flowNext();
+}
+
+/* ---------- 业务动作：模拟流转 ---------- */
+function flowNext() {
+  // 已在最后节点
+  if (state.currentNodeIndex === NODES.length - 1) {
+    showToast('✓ 流程已完成', 'success');
+    return;
+  }
+  state.currentNodeIndex++;
+  const node = NODES[state.currentNodeIndex];
+  // 自动切换角色到该节点的角色
+  state.currentRole = node.role;
+  roleSelect.value = state.currentRole;
+
+  renderNodes();
+  renderForm();
+  pushTrace('流程流转');
+}
+
+/* ---------- 回放测试 ---------- */
+function replay() {
+  const items = Array.from(document.querySelectorAll('.trace-item'));
+  if (items.length === 0) {
+    showToast('暂无记录可回放', 'error');
+    return;
+  }
+  const btn = document.getElementById('replayBtn');
+  btn.disabled = true;
+  btn.textContent = '回放中...';
+
+  // 清除已有高亮
+  items.forEach(it => it.classList.remove('replay-active'));
+
+  // 从最旧（列表底部）到最新（列表顶部）逐条高亮
+  let idx = items.length - 1;
+  function step() {
+    items.forEach(it => it.classList.remove('replay-active'));
+    if (idx < 0) {
+      btn.disabled = false;
+      btn.textContent = '▶ 回放测试';
+      return;
+    }
+    const item = items[idx];
+    item.classList.add('replay-active');
+    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    idx--;
+    setTimeout(step, 700);
+  }
+  step();
+}
+
+/* ---------- 清空记录 ---------- */
+function clearTrace() {
+  state.trace = [];
+  state.stepCounter = 0;
+  renderTrace();
+}
+
+/* ---------- 事件绑定与初始化 ---------- */
+function init() {
+  // 读取 URL 流程上下文
+  const pid = new URLSearchParams(location.search).get('processId');
+  if (pid) {
+    const m = { 'proc_001':'客车采购申请流程','proc_002':'售后维修派单流程','proc_003':'员工请假审批流程','proc_004':'费用报销审批流程' };
+    document.getElementById('procCtx').textContent = '📋 当前流程：' + (m[pid] || pid);
+  }
+  // 角色切换：仅切换视角，重新渲染表单
+  roleSelect.addEventListener('change', () => {
+    state.currentRole = roleSelect.value;
+    renderForm();
+    pushTrace('切换角色');
+  });
+
+  // 异常注入切换：重新渲染表单（越权场景需显隐字段）
+  injectSelect.addEventListener('change', renderForm);
+
+  // 工具栏按钮
+  document.getElementById('flowBtn').addEventListener('click', flowNext);
+  document.getElementById('replayBtn').addEventListener('click', replay);
+  document.getElementById('clearTraceBtn').addEventListener('click', clearTrace);
+
+  // 初始渲染
+  renderNodes();
+  renderForm();
+  renderTrace();
+  pushTrace('流程启动');
+}
+
+init();
+</script>
+</body>
+</html>

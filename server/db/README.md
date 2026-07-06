@@ -10,7 +10,7 @@
 | 0 | `tables_nacos.sql` / `tables_xxl_job.sql` | JeecgBoot 原始脚本 | 微服务部署时使用（单体可忽略） |
 | **1** | **`V01__feplatform_init.sql`** | feplatform 模块 | **前端研发平台核心表**：`fe_skill`、`fe_mcp_skill_rel`、`fe_application`、`fe_team`、`fe_developer`、`fe_pipeline_template`、`fe_project_pipeline`、`fe_ai_usage_log` + Skill 种子数据 |
 | **2** | **`V02__fe_template_center_init.sql`** | feplatform/template 模块 | **应用模版中心** (PRD §2.1)：`fe_template`、`fe_template_version`、`fe_app_create_record` + 菜单 + 字典 + 角色授权 |
-| **3** | **`V03__fe_cicd_init.sql`** | feplatform/cicd 模块 | **CI/CD 治理** (PRD §2.2)：`fe_jenkins_instance`、`fe_tech_stack`、`fe_node_version`、`fe_pipeline`、`fe_pipeline_build` + 菜单 + 字典 + 技术栈/Node 种子数据 |
+| **3** | **`V03__fe_cicd_init.sql`** | feplatform/cicd 模块 | **CI/CD 治理** (PRD §2.2)：`fe_jenkins_instance`、`fe_tech_stack`、`fe_pipeline`、`fe_pipeline_build` + 菜单 + 字典 + 技术栈种子数据 |
 
 ## 执行顺序
 
@@ -70,7 +70,7 @@ SHOW TABLES LIKE 'fe_%';
 -- 应包含：fe_skill, fe_mcp_skill_rel, fe_application, fe_team, fe_developer,
 --        fe_pipeline_template, fe_project_pipeline, fe_ai_usage_log,
 --        fe_template, fe_template_version, fe_app_create_record,
---        fe_jenkins_instance, fe_tech_stack, fe_node_version,
+--        fe_jenkins_instance, fe_tech_stack,
 --        fe_pipeline, fe_pipeline_build
 
 -- 检查菜单是否插入

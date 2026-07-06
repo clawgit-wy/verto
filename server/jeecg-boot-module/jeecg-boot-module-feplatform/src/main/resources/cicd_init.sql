@@ -25,46 +25,7 @@ CREATE TABLE IF NOT EXISTS `fe_jenkins_instance` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Jenkins实例表';
 
 -- -----------------------------------------------------------
--- 2. 技术栈管理表
--- -----------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `fe_tech_stack` (
-  `id` varchar(36) NOT NULL COMMENT '主键ID',
-  `name` varchar(100) NOT NULL COMMENT '技术栈名称',
-  `code` varchar(50) NOT NULL COMMENT '技术栈编码: Vue2/Vue3/React/Angular/jQuery/MicroFrontend',
-  `node_version_range` varchar(50) DEFAULT NULL COMMENT 'Node版本范围, 如: v16-v18',
-  `lint_config` text COMMENT 'Lint配置(JSON)',
-  `jenkinsfile_tpl` longtext COMMENT 'Jenkinsfile模板',
-  `status` varchar(10) DEFAULT 'enable' COMMENT '状态: enable=启用, disable=停用',
-  `description` text COMMENT '描述',
-  `create_by` varchar(50) DEFAULT NULL COMMENT '创建人',
-  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(50) DEFAULT NULL COMMENT '更新人',
-  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  `del_flag` char(1) DEFAULT '0' COMMENT '删除标记',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_tech_stack_code` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='技术栈管理表';
-
--- -----------------------------------------------------------
--- 3. Node 版本管理表
--- -----------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `fe_node_version` (
-  `id` varchar(36) NOT NULL COMMENT '主键ID',
-  `version` varchar(20) NOT NULL COMMENT 'Node版本号, 如: v18.19.0',
-  `status` varchar(10) DEFAULT 'enable' COMMENT '状态: enable=启用, disable=停用',
-  `is_standard` tinyint DEFAULT 1 COMMENT '是否标准版本: 1=是, 0=否',
-  `description` text COMMENT '描述',
-  `create_by` varchar(50) DEFAULT NULL COMMENT '创建人',
-  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(50) DEFAULT NULL COMMENT '更新人',
-  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  `del_flag` char(1) DEFAULT '0' COMMENT '删除标记',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_node_version` (`version`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Node版本管理表';
-
--- -----------------------------------------------------------
--- 4. 流水线表
+-- 3. 流水线表
 -- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `fe_pipeline` (
   `id` varchar(36) NOT NULL COMMENT '主键ID',
@@ -73,7 +34,6 @@ CREATE TABLE IF NOT EXISTS `fe_pipeline` (
   `job_name` varchar(200) NOT NULL COMMENT 'Jenkins Job名称',
   `env` varchar(10) NOT NULL COMMENT '环境: dev=开发, test=测试, prod=生产',
   `tech_stack_id` varchar(36) DEFAULT NULL COMMENT '技术栈ID',
-  `node_version_id` varchar(36) DEFAULT NULL COMMENT 'Node版本ID',
   `check_level` varchar(10) DEFAULT 'standard' COMMENT '检查级别: strict=严格, standard=标准, loose=宽松',
   `deploy_strategy` varchar(20) DEFAULT 'auto_deploy' COMMENT '部署策略: auto_deploy=自动部署, artifact_only=仅制品库, online_deploy=在线部署',
   `template_id` varchar(36) DEFAULT NULL COMMENT '关联模板ID',
@@ -90,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `fe_pipeline` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应用-流水线表';
 
 -- -----------------------------------------------------------
--- 5. 构建记录表
+-- 4. 构建记录表
 -- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `fe_pipeline_build` (
   `id` varchar(36) NOT NULL COMMENT '主键ID',
@@ -100,7 +60,6 @@ CREATE TABLE IF NOT EXISTS `fe_pipeline_build` (
   `duration` bigint DEFAULT NULL COMMENT '耗时(毫秒)',
   `trigger_user` varchar(50) DEFAULT NULL COMMENT '触发用户',
   `commit_sha` varchar(40) DEFAULT NULL COMMENT '提交SHA',
-  `node_version` varchar(20) DEFAULT NULL COMMENT 'Node版本',
   `tech_stack` varchar(50) DEFAULT NULL COMMENT '技术栈',
   `artifact_version` varchar(50) DEFAULT NULL COMMENT '制品版本号',
   `quality_score` decimal(5,2) DEFAULT NULL COMMENT '标准化检查得分',
@@ -127,26 +86,18 @@ INSERT IGNORE INTO `sys_permission` (`id`, `parent_id`, `name`, `url`, `componen
 VALUES ('1910200000000000002', '1910200000000000001', 'Jenkins实例', '/feplatform/cicd/jenkins', 'feplatform/cicd/FeJenkinsInstanceList', NULL, NULL, 1, NULL, '1', 1.00, 0, 'ant-design:build-outlined', 1, 1, 0, 0, 0, NULL, '1', 0, 0, 'admin', NOW(), NULL, NULL, 0);
 
 INSERT IGNORE INTO `sys_permission` (`id`, `parent_id`, `name`, `url`, `component`, `component_name`, `redirect`, `menu_type`, `perms`, `perms_type`, `sort_no`, `always_show`, `icon`, `is_route`, `is_leaf`, `keep_alive`, `hidden`, `hide_tab`, `description`, `status`, `del_flag`, `rule_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `internal_or_external`)
-VALUES ('1910200000000000003', '1910200000000000001', '技术栈管理', '/feplatform/cicd/techStack', 'feplatform/cicd/FeTechStackList', NULL, NULL, 1, NULL, '1', 2.00, 0, 'ant-design:code-outlined', 1, 1, 0, 0, 0, NULL, '1', 0, 0, 'admin', NOW(), NULL, NULL, 0);
+VALUES ('1910200000000000005', '1910200000000000001', '流水线管理', '/feplatform/cicd/pipeline', 'feplatform/cicd/FePipelineList', NULL, NULL, 1, NULL, '1', 2.00, 0, 'ant-design:branches-outlined', 1, 1, 0, 0, 0, NULL, '1', 0, 0, 'admin', NOW(), NULL, NULL, 0);
 
 INSERT IGNORE INTO `sys_permission` (`id`, `parent_id`, `name`, `url`, `component`, `component_name`, `redirect`, `menu_type`, `perms`, `perms_type`, `sort_no`, `always_show`, `icon`, `is_route`, `is_leaf`, `keep_alive`, `hidden`, `hide_tab`, `description`, `status`, `del_flag`, `rule_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `internal_or_external`)
-VALUES ('1910200000000000004', '1910200000000000001', 'Node版本', '/feplatform/cicd/nodeVersion', 'feplatform/cicd/FeNodeVersionList', NULL, NULL, 1, NULL, '1', 3.00, 0, 'ant-design:node-index-outlined', 1, 1, 0, 0, 0, NULL, '1', 0, 0, 'admin', NOW(), NULL, NULL, 0);
-
-INSERT IGNORE INTO `sys_permission` (`id`, `parent_id`, `name`, `url`, `component`, `component_name`, `redirect`, `menu_type`, `perms`, `perms_type`, `sort_no`, `always_show`, `icon`, `is_route`, `is_leaf`, `keep_alive`, `hidden`, `hide_tab`, `description`, `status`, `del_flag`, `rule_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `internal_or_external`)
-VALUES ('1910200000000000005', '1910200000000000001', '流水线管理', '/feplatform/cicd/pipeline', 'feplatform/cicd/FePipelineList', NULL, NULL, 1, NULL, '1', 4.00, 0, 'ant-design:branches-outlined', 1, 1, 0, 0, 0, NULL, '1', 0, 0, 'admin', NOW(), NULL, NULL, 0);
-
-INSERT IGNORE INTO `sys_permission` (`id`, `parent_id`, `name`, `url`, `component`, `component_name`, `redirect`, `menu_type`, `perms`, `perms_type`, `sort_no`, `always_show`, `icon`, `is_route`, `is_leaf`, `keep_alive`, `hidden`, `hide_tab`, `description`, `status`, `del_flag`, `rule_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `internal_or_external`)
-VALUES ('1910200000000000006', '1910200000000000001', '构建记录', '/feplatform/cicd/build', 'feplatform/cicd/FePipelineBuildList', NULL, NULL, 1, NULL, '1', 5.00, 0, 'ant-design:history-outlined', 1, 1, 0, 0, 0, NULL, '1', 0, 0, 'admin', NOW(), NULL, NULL, 0);
+VALUES ('1910200000000000006', '1910200000000000001', '构建记录', '/feplatform/cicd/build', 'feplatform/cicd/FePipelineBuildList', NULL, NULL, 1, NULL, '1', 3.00, 0, 'ant-design:history-outlined', 1, 1, 0, 0, 0, NULL, '1', 0, 0, 'admin', NOW(), NULL, NULL, 0);
 
 -- -----------------------------------------------------------
 -- CI/CD 角色授权
 -- -----------------------------------------------------------
 INSERT IGNORE INTO `sys_role_permission` (`id`, `role_id`, `permission_id`, `data_rule_ids`, `operate_date`, `operate_ip`) VALUES ('1910200000000000050', 'f6817f48af4fb3af11b9e8bf182f618b', '1910200000000000001', NULL, NOW(), '127.0.0.1');
 INSERT IGNORE INTO `sys_role_permission` (`id`, `role_id`, `permission_id`, `data_rule_ids`, `operate_date`, `operate_ip`) VALUES ('1910200000000000051', 'f6817f48af4fb3af11b9e8bf182f618b', '1910200000000000002', NULL, NOW(), '127.0.0.1');
-INSERT IGNORE INTO `sys_role_permission` (`id`, `role_id`, `permission_id`, `data_rule_ids`, `operate_date`, `operate_ip`) VALUES ('1910200000000000052', 'f6817f48af4fb3af11b9e8bf182f618b', '1910200000000000003', NULL, NOW(), '127.0.0.1');
-INSERT IGNORE INTO `sys_role_permission` (`id`, `role_id`, `permission_id`, `data_rule_ids`, `operate_date`, `operate_ip`) VALUES ('1910200000000000053', 'f6817f48af4fb3af11b9e8bf182f618b', '1910200000000000004', NULL, NOW(), '127.0.0.1');
-INSERT IGNORE INTO `sys_role_permission` (`id`, `role_id`, `permission_id`, `data_rule_ids`, `operate_date`, `operate_ip`) VALUES ('1910200000000000054', 'f6817f48af4fb3af11b9e8bf182f618b', '1910200000000000005', NULL, NOW(), '127.0.0.1');
-INSERT IGNORE INTO `sys_role_permission` (`id`, `role_id`, `permission_id`, `data_rule_ids`, `operate_date`, `operate_ip`) VALUES ('1910200000000000055', 'f6817f48af4fb3af11b9e8bf182f618b', '1910200000000000006', NULL, NOW(), '127.0.0.1');
+INSERT IGNORE INTO `sys_role_permission` (`id`, `role_id`, `permission_id`, `data_rule_ids`, `operate_date`, `operate_ip`) VALUES ('1910200000000000053', 'f6817f48af4fb3af11b9e8bf182f618b', '1910200000000000005', NULL, NOW(), '127.0.0.1');
+INSERT IGNORE INTO `sys_role_permission` (`id`, `role_id`, `permission_id`, `data_rule_ids`, `operate_date`, `operate_ip`) VALUES ('1910200000000000054', 'f6817f48af4fb3af11b9e8bf182f618b', '1910200000000000006', NULL, NOW(), '127.0.0.1');
 
 -- -----------------------------------------------------------
 -- CI/CD 字典数据
@@ -161,16 +112,6 @@ INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, 
 INSERT IGNORE INTO `sys_dict` (`id`, `dict_name`, `dict_code`, `description`, `del_flag`, `create_by`, `create_time`, `type`, `update_by`, `update_time`) VALUES ('1910200000000000110', 'Jenkins状态', 'fe_jenkins_status', 'Jenkins实例状态', 0, 'admin', NOW(), 0, NULL, NULL);
 INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, `description`, `sort_order`, `status`, `create_by`, `create_time`) VALUES ('1910200000000000111', '1910200000000000110', '启用', 'enable', NULL, 1, 1, 'admin', NOW());
 INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, `description`, `sort_order`, `status`, `create_by`, `create_time`) VALUES ('1910200000000000112', '1910200000000000110', '停用', 'disable', NULL, 2, 1, 'admin', NOW());
-
--- 技术栈状态
-INSERT IGNORE INTO `sys_dict` (`id`, `dict_name`, `dict_code`, `description`, `del_flag`, `create_by`, `create_time`, `type`, `update_by`, `update_time`) VALUES ('1910200000000000120', '技术栈状态', 'fe_tech_stack_status', '技术栈启用停用', 0, 'admin', NOW(), 0, NULL, NULL);
-INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, `description`, `sort_order`, `status`, `create_by`, `create_time`) VALUES ('1910200000000000121', '1910200000000000120', '启用', 'enable', NULL, 1, 1, 'admin', NOW());
-INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, `description`, `sort_order`, `status`, `create_by`, `create_time`) VALUES ('1910200000000000122', '1910200000000000120', '停用', 'disable', NULL, 2, 1, 'admin', NOW());
-
--- Node版本状态
-INSERT IGNORE INTO `sys_dict` (`id`, `dict_name`, `dict_code`, `description`, `del_flag`, `create_by`, `create_time`, `type`, `update_by`, `update_time`) VALUES ('1910200000000000130', 'Node版本状态', 'fe_node_status', 'Node版本启用停用', 0, 'admin', NOW(), 0, NULL, NULL);
-INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, `description`, `sort_order`, `status`, `create_by`, `create_time`) VALUES ('1910200000000000131', '1910200000000000130', '启用', 'enable', NULL, 1, 1, 'admin', NOW());
-INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, `description`, `sort_order`, `status`, `create_by`, `create_time`) VALUES ('1910200000000000132', '1910200000000000130', '停用', 'disable', NULL, 2, 1, 'admin', NOW());
 
 -- 流水线环境
 INSERT IGNORE INTO `sys_dict` (`id`, `dict_name`, `dict_code`, `description`, `del_flag`, `create_by`, `create_time`, `type`, `update_by`, `update_time`) VALUES ('1910200000000000140', '流水线环境', 'fe_pipeline_env', '流水线部署环境', 0, 'admin', NOW(), 0, NULL, NULL);
@@ -198,21 +139,7 @@ INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, 
 INSERT IGNORE INTO `sys_dict_item` (`id`, `dict_id`, `item_text`, `item_value`, `description`, `sort_order`, `status`, `create_by`, `create_time`) VALUES ('1910200000000000174', '1910200000000000170', '已中止', 'aborted', NULL, 4, 1, 'admin', NOW());
 
 -- -----------------------------------------------------------
--- 技术栈种子数据
+-- 以下注释遗留表保留供参考（已删除管理功能，表结构保留兼容）
 -- -----------------------------------------------------------
-INSERT IGNORE INTO `fe_tech_stack` (`id`, `name`, `code`, `node_version_range`, `status`, `description`, `create_by`, `create_time`) VALUES
-('1', 'Vue2', 'Vue2', 'v14-v16', 'enable', 'Vue 2.x + Webpack', 'admin', NOW()),
-('2', 'Vue3', 'Vue3', 'v16+', 'enable', 'Vue 3.x + Vite/Webpack', 'admin', NOW()),
-('3', 'React', 'React', 'v14+', 'enable', 'React + Webpack/Vite', 'admin', NOW()),
-('4', 'Angular', 'Angular', 'v14-v18', 'enable', 'Angular + AngularCLI', 'admin', NOW()),
-('5', 'jQuery', 'jQuery', 'v12+', 'enable', 'jQuery + Webpack/Gulp', 'admin', NOW()),
-('6', '微前端', 'MicroFrontend', 'v16+', 'enable', 'qiankun/single-spa/module-federation', 'admin', NOW());
 
--- -----------------------------------------------------------
--- Node版本种子数据
--- -----------------------------------------------------------
-INSERT IGNORE INTO `fe_node_version` (`id`, `version`, `status`, `is_standard`, `create_by`, `create_time`) VALUES
-('1', 'v14.21.3', 'disable', 0, 'admin', NOW()),
-('2', 'v16.20.2', 'enable', 1, 'admin', NOW()),
-('3', 'v18.19.0', 'enable', 1, 'admin', NOW()),
-('4', 'v20.10.0', 'enable', 1, 'admin', NOW());
+

@@ -13,22 +13,6 @@ enum Api {
   jenkinsDeleteBatch = '/feplatform/cicd/jenkins/deleteBatch',
   jenkinsTest = '/feplatform/cicd/jenkins/testConnection',
 
-  // 技术栈
-  techStackList = '/feplatform/cicd/techStack/list',
-  techStackQueryById = '/feplatform/cicd/techStack/queryById',
-  techStackAdd = '/feplatform/cicd/techStack/add',
-  techStackEdit = '/feplatform/cicd/techStack/edit',
-  techStackDelete = '/feplatform/cicd/techStack/delete',
-  techStackDeleteBatch = '/feplatform/cicd/techStack/deleteBatch',
-
-  // Node版本
-  nodeVersionList = '/feplatform/cicd/nodeVersion/list',
-  nodeVersionQueryById = '/feplatform/cicd/nodeVersion/queryById',
-  nodeVersionAdd = '/feplatform/cicd/nodeVersion/add',
-  nodeVersionEdit = '/feplatform/cicd/nodeVersion/edit',
-  nodeVersionDelete = '/feplatform/cicd/nodeVersion/delete',
-  nodeVersionDeleteBatch = '/feplatform/cicd/nodeVersion/deleteBatch',
-
   // 流水线
   pipelineList = '/feplatform/cicd/pipeline/list',
   pipelineQueryById = '/feplatform/cicd/pipeline/queryById',
@@ -86,42 +70,6 @@ export const jenkinsBatchDelete = makeBatchDelete(Api.jenkinsDeleteBatch);
 
 export const jenkinsTestConnection = (id: string) =>
   defHttp.get({ url: Api.jenkinsTest, params: { id } });
-
-// ============ 技术栈 ============
-export const techStackList = (params) => defHttp.get({ url: Api.techStackList, params });
-
-export const techStackQueryById = (id: string) => defHttp.get({ url: Api.techStackQueryById, params: { id } });
-
-export const techStackSaveOrUpdate = (params, isUpdate) => {
-  const url = isUpdate ? Api.techStackEdit : Api.techStackAdd;
-  return defHttp.post({ url, params });
-};
-
-export const techStackDelete = (params, handleSuccess) => {
-  return defHttp.delete({ url: Api.techStackDelete, params }, { joinParamsToUrl: true }).then(() => {
-    handleSuccess();
-  });
-};
-
-export const techStackBatchDelete = makeBatchDelete(Api.techStackDeleteBatch);
-
-// ============ Node版本 ============
-export const nodeVersionList = (params) => defHttp.get({ url: Api.nodeVersionList, params });
-
-export const nodeVersionQueryById = (id: string) => defHttp.get({ url: Api.nodeVersionQueryById, params: { id } });
-
-export const nodeVersionSaveOrUpdate = (params, isUpdate) => {
-  const url = isUpdate ? Api.nodeVersionEdit : Api.nodeVersionAdd;
-  return defHttp.post({ url, params });
-};
-
-export const nodeVersionDelete = (params, handleSuccess) => {
-  return defHttp.delete({ url: Api.nodeVersionDelete, params }, { joinParamsToUrl: true }).then(() => {
-    handleSuccess();
-  });
-};
-
-export const nodeVersionBatchDelete = makeBatchDelete(Api.nodeVersionDeleteBatch);
 
 // ============ 流水线 ============
 export const pipelineList = (params) => defHttp.get({ url: Api.pipelineList, params });

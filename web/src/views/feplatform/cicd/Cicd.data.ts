@@ -90,141 +90,6 @@ export const jenkinsFormSchema: FormSchema[] = [
   },
 ];
 
-// ============ 技术栈 ============
-export const techStackColumns: BasicColumn[] = [
-  { title: '技术栈名称', align: 'center', dataIndex: 'name' },
-  { title: '编码', align: 'center', dataIndex: 'code' },
-  { title: 'Node版本范围', align: 'center', dataIndex: 'nodeVersionRange' },
-  {
-    title: '状态',
-    align: 'center',
-    dataIndex: 'status',
-    width: 90,
-    customRender: ({ text }) => (text === 'enable' ? '启用' : '停用'),
-  },
-  { title: '描述', align: 'left', dataIndex: 'description', ellipsis: true },
-  { title: '创建时间', align: 'center', dataIndex: 'createTime', width: 170 },
-];
-
-export const techStackSearchSchema: FormSchema[] = [
-  { label: '技术栈名称', field: 'name', component: 'Input', colProps: { span: 6 } },
-  { label: '编码', field: 'code', component: 'Input', colProps: { span: 6 } },
-];
-
-export const techStackFormSchema: FormSchema[] = [
-  { label: '', field: 'id', component: 'Input', show: false },
-  { label: '技术栈名称', field: 'name', component: 'Input', required: true },
-  {
-    label: '技术栈编码',
-    field: 'code',
-    component: 'Input',
-    required: true,
-    componentProps: { placeholder: '如：Vue3 / React / Angular' },
-  },
-  {
-    label: 'Node版本范围',
-    field: 'nodeVersionRange',
-    component: 'Input',
-    componentProps: { placeholder: '如：v16-v18' },
-  },
-  {
-    label: 'Lint配置(JSON)',
-    field: 'lintConfig',
-    component: 'InputTextArea',
-    componentProps: { rows: 3 },
-  },
-  {
-    label: 'Jenkinsfile模板',
-    field: 'jenkinsfileTpl',
-    component: 'InputTextArea',
-    componentProps: { rows: 6 },
-  },
-  {
-    label: '状态',
-    field: 'status',
-    component: 'RadioGroup',
-    defaultValue: 'enable',
-    componentProps: {
-      options: [
-        { label: '启用', value: 'enable' },
-        { label: '停用', value: 'disable' },
-      ],
-    },
-  },
-  {
-    label: '描述',
-    field: 'description',
-    component: 'InputTextArea',
-    componentProps: { rows: 3 },
-  },
-];
-
-// ============ Node版本 ============
-export const nodeVersionColumns: BasicColumn[] = [
-  { title: '版本号', align: 'center', dataIndex: 'version' },
-  {
-    title: '是否标准',
-    align: 'center',
-    dataIndex: 'isStandard',
-    width: 100,
-    customRender: ({ text }) => (text === 1 || text === '1' ? '是' : '否'),
-  },
-  {
-    title: '状态',
-    align: 'center',
-    dataIndex: 'status',
-    width: 90,
-    customRender: ({ text }) => (text === 'enable' ? '启用' : '停用'),
-  },
-  { title: '描述', align: 'left', dataIndex: 'description', ellipsis: true },
-  { title: '创建时间', align: 'center', dataIndex: 'createTime', width: 170 },
-];
-
-export const nodeVersionSearchSchema: FormSchema[] = [
-  { label: '版本号', field: 'version', component: 'Input', colProps: { span: 6 } },
-];
-
-export const nodeVersionFormSchema: FormSchema[] = [
-  { label: '', field: 'id', component: 'Input', show: false },
-  {
-    label: 'Node版本号',
-    field: 'version',
-    component: 'Input',
-    required: true,
-    componentProps: { placeholder: '如：v18.19.0' },
-  },
-  {
-    label: '是否标准版本',
-    field: 'isStandard',
-    component: 'RadioGroup',
-    defaultValue: 0,
-    componentProps: {
-      options: [
-        { label: '是', value: 1 },
-        { label: '否', value: 0 },
-      ],
-    },
-  },
-  {
-    label: '状态',
-    field: 'status',
-    component: 'RadioGroup',
-    defaultValue: 'enable',
-    componentProps: {
-      options: [
-        { label: '启用', value: 'enable' },
-        { label: '停用', value: 'disable' },
-      ],
-    },
-  },
-  {
-    label: '描述',
-    field: 'description',
-    component: 'InputTextArea',
-    componentProps: { rows: 3 },
-  },
-];
-
 // ============ 流水线 ============
 export const pipelineColumns: BasicColumn[] = [
   { title: 'Job名称', align: 'center', dataIndex: 'jobName' },
@@ -305,7 +170,6 @@ export const pipelineFormSchema: FormSchema[] = [
     },
   },
   { label: '技术栈ID', field: 'techStackId', component: 'Input' },
-  { label: 'Node版本ID', field: 'nodeVersionId', component: 'Input' },
   {
     label: '检查级别',
     field: 'checkLevel',
@@ -360,7 +224,6 @@ export const buildColumns: BasicColumn[] = [
   },
   { title: '触发用户', align: 'center', dataIndex: 'triggerUser' },
   { title: '提交SHA', align: 'center', dataIndex: 'commitSha', ellipsis: true },
-  { title: 'Node版本', align: 'center', dataIndex: 'nodeVersion' },
   { title: '技术栈', align: 'center', dataIndex: 'techStack' },
   { title: '制品版本', align: 'center', dataIndex: 'artifactVersion' },
   { title: '质量得分', align: 'center', dataIndex: 'qualityScore', width: 100 },

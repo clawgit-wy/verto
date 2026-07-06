@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>表单设计器 · 表单引擎工作台</title>
+<style>
+  /* ===== 基础重置与设计变量 ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6fa;
+    color: #1f2937;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== 顶部控制栏 ===== */
+  .topbar {
+    height: 56px;
+    flex-shrink: 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+  .topbar-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1f2937;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar-link {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .topbar-link:hover { color: #4f46e5; }
+  .tmpl-select {
+    height: 32px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0 8px;
+    font-size: 13px;
+    background: #fff;
+    color: #1f2937;
+    cursor: pointer;
+  }
+
+  /* ===== 按钮通用 ===== */
+  .btn {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s, border-color .15s, color .15s;
+    font-family: inherit;
+  }
+  .btn-primary { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .btn-primary:hover { background: #4338ca; border-color: #4338ca; }
+  .btn-secondary { background: #fff; color: #374151; border-color: #e5e7eb; }
+  .btn-secondary:hover { border-color: #4f46e5; color: #4f46e5; }
+  .btn-small { height: 26px; padding: 0 10px; font-size: 12px; }
+
+  /* ===== 主体三栏布局 ===== */
+  .workspace {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* 左侧组件库 */
+  .left-panel {
+    width: 200px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    padding: 14px 12px;
+    overflow-y: auto;
+  }
+  .panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 12px;
+  }
+  .comp-group {
+    margin-bottom: 16px;
+  }
+  .comp-group-label {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .comp-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    cursor: grab;
+    background: #fff;
+    font-size: 13px;
+    transition: border-color .15s, background .15s;
+    user-select: none;
+  }
+  .comp-item:hover {
+    border-color: #4f46e5;
+    background: #eef2ff;
+  }
+  .comp-item:active { cursor: grabbing; }
+  .comp-item .emoji { font-size: 14px; }
+
+  /* 中间画布 */
+  .center-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #f5f6fa;
+  }
+  .canvas-toolbar {
+    height: 44px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  .canvas-toolbar .left { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 13px; }
+  .canvas-toolbar .right { display: flex; gap: 8px; }
+  .canvas-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+  }
+  .canvas {
+    background: #fff;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    min-height: calc(100% - 4px);
+    padding: 16px;
+    transition: border-color .15s, background .15s;
+  }
+  .canvas.drag-over {
+    border-color: #4f46e5;
+    background: #eef2ff;
+  }
+  .canvas-empty {
+    text-align: center;
+    color: #9ca3af;
+    padding: 60px 0;
+    font-size: 13px;
+  }
+  .comp-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .comp-card:hover { border-color: #c7d2fe; }
+  .comp-card.selected {
+    border: 2px solid #4f46e5;
+    padding: 11px 13px;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+  }
+  .comp-card .del-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    border: 2px solid #fff;
+    font-size: 12px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .comp-card:hover .del-btn { display: flex; }
+  .comp-preview { display: flex; flex-direction: column; gap: 6px; }
+  .comp-preview .label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .comp-preview .req { color: #ef4444; }
+  .comp-preview .ctrl { font-size: 13px; }
+  .comp-preview input[type=text],
+  .comp-preview input[type=number],
+  .comp-preview textarea,
+  .comp-preview select {
+    width: 100%;
+    height: 32px;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 0 8px;
+    font-size: 13px;
+    background: #fff;
+    color: #1f2937;
+  }
+  .comp-preview textarea { height: 60px; padding: 6px 8px; resize: vertical; }
+  .comp-preview .fake-input {
+    height: 32px;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 0 8px;
+    font-size: 13px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    background: #f9fafb;
+  }
+  .comp-preview .pill {
+    display: inline-block;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+  }
+  .comp-preview .del-hint { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+  /* 右侧属性面板 */
+  .right-panel {
+    width: 300px;
+    flex-shrink: 0;
+    background: #fff;
+    border-left: 1px solid #e5e7eb;
+    padding: 14px 14px;
+    overflow-y: auto;
+  }
+  .prop-empty {
+    text-align: center;
+    color: #9ca3af;
+    padding: 48px 0;
+    font-size: 13px;
+  }
+  .prop-section {
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .prop-section:last-child { border-bottom: none; }
+  .prop-section h4 {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 10px;
+  }
+  .prop-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .prop-row label {
+    width: 78px;
+    font-size: 12px;
+    color: #6b7280;
+    flex-shrink: 0;
+  }
+  .prop-row input[type=text],
+  .prop-row input[type=number],
+  .prop-row select {
+    flex: 1;
+    height: 30px;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 0 8px;
+    font-size: 12px;
+    background: #fff;
+    color: #1f2937;
+    font-family: inherit;
+  }
+  .prop-row input[type=checkbox] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+  }
+  .prop-row .check-label { width: auto; color: #374151; font-size: 12px; cursor: pointer; }
+
+  /* 权限矩阵表 */
+  .perm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  .perm-table th, .perm-table td {
+    border: 1px solid #e5e7eb;
+    padding: 4px 2px;
+    text-align: center;
+  }
+  .perm-table th {
+    background: #f9fafb;
+    color: #6b7280;
+    font-weight: 600;
+  }
+  .perm-table .role-cell { text-align: left; padding-left: 6px; color: #374151; }
+  .perm-table label { display: inline-flex; cursor: pointer; padding: 2px; }
+  .perm-table input[type=radio] { width: 12px; height: 12px; cursor: pointer; }
+
+  /* schema 弹层 */
+  .schema-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .schema-modal.show { display: flex; }
+  .schema-modal .box {
+    width: 720px;
+    max-width: 92vw;
+    max-height: 80vh;
+    background: #fff;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .schema-modal .head {
+    padding: 14px 18px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .schema-modal .head h3 { font-size: 15px; }
+  .schema-modal .head .close { cursor: pointer; color: #6b7280; font-size: 20px; line-height: 1; }
+  .schema-modal pre {
+    margin: 0;
+    padding: 16px 18px;
+    overflow: auto;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #1f2937;
+    background: #f9fafb;
+    flex: 1;
+  }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: #1f2937;
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity .2s, transform .2s;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 技术栈说明条 */
+  .arch-bar {
+    background: linear-gradient(90deg, #eef2ff, #ecfdf5);
+    border-bottom: 1px solid #e5e7eb;
+    padding: 9px 20px;
+    font-size: 12px;
+    color: #4f46e5;
+    flex-shrink: 0;
+  }
+  .arch-bar b { color: #4338ca; }
+  .proc-ctx { font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- 顶部控制栏 -->
+<div class="topbar">
+  <div class="topbar-title">🛠 表单引擎工作台 · 设计模式</div>
+  <div class="topbar-right">
+    <span id="procCtx" class="proc-ctx" style="font-size:12px;color:#6b7280;margin-right:4px;"></span>
+    <select class="tmpl-select" id="tmplSelect">
+      <option value="tmpl_001">tmpl_001 客车采购申请表单 v1.0</option>
+      <option value="tmpl_002">tmpl_002 售后维修派单表 v2.1</option>
+    </select>
+    <button class="btn btn-secondary" id="saveTmplBtn">💾 保存为模板</button>
+    <a class="topbar-link" href="process-list.html">← 返回流程列表</a>
+  </div>
+</div>
+
+<!-- 表单引擎技术栈说明条 -->
+<div class="arch-bar">
+  🧩 <span>表单引擎基座：<b>form-create</b>（设计器产出 JSON Schema）→ Schema Adapter 转换 → <b>TanStack Form</b>（headless 运行时）→ 可插拔 UI Adapter（Element Plus / Ant Design Vue / Naive UI）</span>
+</div>
+
+<!-- 主工作区 -->
+<div class="workspace">
+  <!-- 左侧组件库 -->
+  <div class="left-panel">
+    <div class="panel-title">组件库</div>
+
+    <div class="comp-group">
+      <div class="comp-group-label">基础组件</div>
+      <div class="comp-item" draggable="true" data-type="input"><span class="emoji">📦</span>文本框</div>
+      <div class="comp-item" draggable="true" data-type="number"><span class="emoji">🔢</span>数字框</div>
+      <div class="comp-item" draggable="true" data-type="select"><span class="emoji">▼</span>下拉框</div>
+      <div class="comp-item" draggable="true" data-type="radio"><span class="emoji">🔘</span>单选框</div>
+      <div class="comp-item" draggable="true" data-type="checkbox"><span class="emoji">☑</span>复选框</div>
+      <div class="comp-item" draggable="true" data-type="datepicker"><span class="emoji">📅</span>日期选择器</div>
+      <div class="comp-item" draggable="true" data-type="textarea"><span class="emoji">📝</span>文本域</div>
+      <div class="comp-item" draggable="true" data-type="switch"><span class="emoji">🔀</span>开关</div>
+      <div class="comp-item" draggable="true" data-type="button"><span class="emoji">🔘</span>按钮</div>
+    </div>
+
+    <div class="comp-group">
+      <div class="comp-group-label">布局组件</div>
+      <div class="comp-item" draggable="true" data-type="row"><span class="emoji">📏</span>行布局</div>
+      <div class="comp-item" draggable="true" data-type="group"><span class="emoji">🗂</span>分组</div>
+    </div>
+  </div>
+
+  <!-- 中间画布 -->
+  <div class="center-panel">
+    <div class="canvas-toolbar">
+      <div class="left">🎨 画布 Canvas</div>
+      <div class="right">
+        <button class="btn btn-secondary btn-small" id="viewSchemaBtn">📄 查看 Schema JSON</button>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <div class="canvas" id="canvas">
+        <div class="canvas-empty">拖拽或点击左侧组件到这里</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧属性面板 -->
+  <div class="right-panel" id="propPanel">
+    <div class="prop-empty">请选择一个组件</div>
+  </div>
+</div>
+
+<!-- Schema 弹层 -->
+<div class="schema-modal" id="schemaModal">
+  <div class="box">
+    <div class="head">
+      <h3>表单 Schema JSON</h3>
+      <span class="close" id="closeSchemaBtn">×</span>
+    </div>
+    <pre id="schemaPre"></pre>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== Mock 数据：getFormFieldList ===== */
+const FIELDS = [
+  { fieldKey: 'bus_type', fieldName: '客车型号', fieldType: 'String', required: true },
+  { fieldKey: 'order_count', fieldName: '采购数量', fieldType: 'Integer', required: true },
+  { fieldKey: 'total_price', fieldName: '总金额', fieldType: 'BigDecimal', required: false },
+  { fieldKey: 'manager_opinion', fieldName: '经理审批意见', fieldType: 'String', required: false }
+];
+
+/* ===== Mock 数据：getMethodInfo ===== */
+const METHODS = [
+  { methodKey: 'busService.calculateDiscount', methodName: '计算大客户折扣率', params: ['order_count'] },
+  { methodKey: 'stockService.checkInventory', methodName: '检查客车底盘库存', params: ['bus_type', 'order_count'] }
+];
+
+/* ===== 组件类型中文名映射 ===== */
+const TYPE_NAME = {
+  input: '文本框', number: '数字框', select: '下拉框', radio: '单选框',
+  checkbox: '复选框', datepicker: '日期选择器', textarea: '文本域',
+  switch: '开关', button: '按钮', row: '行布局', group: '分组'
+};
+
+/* ===== 全局状态：编排 Schema ===== */
+let schema = {
+  templateId: 'tmpl_001',
+  templateName: '客车采购申请表单',
+  version: 'v1.0',
+  layout: []
+};
+let compIdSeq = 0;
+let selectedId = null;
+
+/* ===== 工具函数 ===== */
+const $ = (sel) => document.querySelector(sel);
+const canvas = $('#canvas');
+const propPanel = $('#propPanel');
+
+function nextId() {
+  compIdSeq++;
+  return 'comp_' + compIdSeq;
+}
+
+function showToast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+/* 创建一个新组件实例 */
+function createComponent(type) {
+  const comp = {
+    id: nextId(),
+    type: type,
+    label: TYPE_NAME[type] || type,
+    fieldKey: '',
+    fieldType: 'String',
+    required: false,
+    placeholder: '',
+    defaultValue: '',
+    visibleRule: '',
+    permissions: {
+      applicant: 'write',
+      manager: 'readonly',
+      finance: 'hidden'
+    }
+  };
+  if (type === 'button') {
+    comp.action = { methodKey: '', params: [] };
+  }
+  return comp;
+}
+
+/* ===== 渲染画布 ===== */
+function renderCanvas() {
+  if (schema.layout.length === 0) {
+    canvas.innerHTML = '<div class="canvas-empty">拖拽或点击左侧组件到这里</div>';
+    return;
+  }
+  canvas.innerHTML = '';
+  schema.layout.forEach(comp => {
+    canvas.appendChild(renderCompCard(comp));
+  });
+}
+
+/* 渲染单个组件卡片 */
+function renderCompCard(comp) {
+  const card = document.createElement('div');
+  card.className = 'comp-card' + (comp.id === selectedId ? ' selected' : '');
+  card.dataset.id = comp.id;
+
+  const preview = document.createElement('div');
+  preview.className = 'comp-preview';
+
+  // label 行
+  const labelRow = document.createElement('div');
+  labelRow.className = 'label';
+  if (comp.type !== 'button') {
+    labelRow.innerHTML = `<span>${escapeHtml(comp.label)}</span>` +
+      (comp.required ? '<span class="req">*</span>' : '') +
+      (comp.fieldKey ? `<span class="pill">${comp.fieldKey}</span>` : '');
+  }
+  preview.appendChild(labelRow);
+
+  // 控件预览
+  const ctrl = document.createElement('div');
+  ctrl.className = 'ctrl';
+  ctrl.innerHTML = previewControl(comp);
+  preview.appendChild(ctrl);
+
+  card.appendChild(preview);
+
+  // 删除按钮
+  const del = document.createElement('div');
+  del.className = 'del-btn';
+  del.textContent = '×';
+  del.title = '删除';
+  del.addEventListener('click', (e) => {
+    e.stopPropagation();
+    deleteComponent(comp.id);
+  });
+  card.appendChild(del);
+
+  card.addEventListener('click', () => {
+    selectedId = comp.id;
+    renderCanvas();
+    renderPropPanel();
+  });
+
+  return card;
+}
+
+/* 生成控件预览 HTML */
+function previewControl(comp) {
+  const placeholder = comp.placeholder ? `placeholder="${escapeAttr(comp.placeholder)}"` : '';
+  switch (comp.type) {
+    case 'input':
+      return `<input type="text" ${placeholder} value="${escapeAttr(comp.defaultValue)}" disabled>`;
+    case 'number':
+      return `<input type="number" ${placeholder} value="${escapeAttr(comp.defaultValue)}" disabled>`;
+    case 'select':
+      return `<select disabled><option>${comp.placeholder || '请选择'}</option></select>`;
+    case 'radio':
+      return `<div class="fake-input">○ 选项一 &nbsp;&nbsp; ○ 选项二</div>`;
+    case 'checkbox':
+      return `<div class="fake-input">☑ 选项一 &nbsp;&nbsp; ☐ 选项二</div>`;
+    case 'datepicker':
+      return `<div class="fake-input">📅 选择日期</div>`;
+    case 'textarea':
+      return `<textarea ${placeholder} disabled>${escapeHtml(comp.defaultValue)}</textarea>`;
+    case 'switch':
+      return `<div class="fake-input">🔀 关</div>`;
+    case 'button':
+      return `<button class="btn btn-primary btn-small" type="button" disabled>${escapeHtml(comp.label)}${comp.action && comp.action.methodKey ? ` <span class="pill">${comp.action.methodKey}</span>` : ''}</button>`;
+    case 'row':
+      return `<div class="fake-input">📏 行布局容器（可拖入子组件）</div>`;
+    case 'group':
+      return `<div class="fake-input">🗂 分组容器（可拖入子组件）</div>`;
+    default:
+      return '';
+  }
+}
+
+/* ===== 渲染属性面板 ===== */
+function renderPropPanel() {
+  const comp = schema.layout.find(c => c.id === selectedId);
+  if (!comp) {
+    propPanel.innerHTML = '<div class="prop-empty">请选择一个组件</div>';
+    return;
+  }
+
+  let html = '';
+  // 基础属性
+  html += `<div class="prop-section">
+    <h4>基础属性</h4>
+    <div class="prop-row"><label>标签</label><input type="text" data-prop="label" value="${escapeAttr(comp.label)}"></div>
+    <div class="prop-row"><label>占位提示</label><input type="text" data-prop="placeholder" value="${escapeAttr(comp.placeholder)}"></div>
+    <div class="prop-row"><label>默认值</label><input type="text" data-prop="defaultValue" value="${escapeAttr(comp.defaultValue)}"></div>
+    <div class="prop-row"><label>必填</label><input type="checkbox" data-prop="required" ${comp.required ? 'checked' : ''}><label class="check-label">该字段为必填项</label></div>
+    <div class="prop-row"><label>字段类型</label>
+      <select data-prop="fieldType">
+        ${['String','Integer','BigDecimal','Date'].map(t => `<option value="${t}" ${comp.fieldType===t?'selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+  </div>`;
+
+  // 字段绑定
+  html += `<div class="prop-section">
+    <h4>字段绑定</h4>
+    <div class="prop-row"><label>绑定字段</label>
+      <select data-prop="fieldKey">
+        <option value="">（未绑定）</option>
+        ${FIELDS.map(f => `<option value="${f.fieldKey}" ${comp.fieldKey===f.fieldKey?'selected':''}>${f.fieldKey} (${f.fieldName})</option>`).join('')}
+      </select>
+    </div>
+  </div>`;
+
+  // 动作绑定（仅按钮）
+  if (comp.type === 'button') {
+    const method = METHODS.find(m => m.methodKey === comp.action.methodKey);
+    const paramOptions = method ? method.params : [];
+    html += `<div class="prop-section">
+      <h4>动作绑定</h4>
+      <div class="prop-row"><label>业务方法</label>
+        <select data-prop="methodKey">
+          <option value="">（未绑定）</option>
+          ${METHODS.map(m => `<option value="${m.methodKey}" ${comp.action.methodKey===m.methodKey?'selected':''}>${m.methodKey} (${m.methodName})</option>`).join('')}
+        </select>
+      </div>
+      <div class="prop-row" style="align-items:flex-start;">
+        <label>入参映射</label>
+        <div style="flex:1;">
+          ${paramOptions.length === 0 ? '<div style="font-size:12px;color:#9ca3af;">请先选择业务方法</div>' :
+            paramOptions.map(p => `<div style="margin-bottom:4px;font-size:12px;color:#374151;">${p} → <span style="color:#4f46e5;">${p}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // 权限矩阵
+  const roles = [
+    { key: 'applicant', name: '申请人 🙋' },
+    { key: 'manager', name: '部门经理 👔' },
+    { key: 'finance', name: '财务总监 💰' }
+  ];
+  html += `<div class="prop-section">
+    <h4>权限矩阵</h4>
+    <table class="perm-table">
+      <thead><tr><th>角色</th><th>可写</th><th>只读</th><th>隐藏</th></tr></thead>
+      <tbody>
+        ${roles.map(r => `
+          <tr>
+            <td class="role-cell">${r.name}</td>
+            <td><label><input type="radio" name="perm_${r.key}" value="write" data-perm="${r.key}" ${comp.permissions[r.key]==='write'?'checked':''}></label></td>
+            <td><label><input type="radio" name="perm_${r.key}" value="readonly" data-perm="${r.key}" ${comp.permissions[r.key]==='readonly'?'checked':''}></label></td>
+            <td><label><input type="radio" name="perm_${r.key}" value="hidden" data-perm="${r.key}" ${comp.permissions[r.key]==='hidden'?'checked':''}></label></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  // 可见性条件
+  html += `<div class="prop-section">
+    <h4>可见性条件</h4>
+    <div class="prop-row"><label>表达式</label><input type="text" data-prop="visibleRule" value="${escapeAttr(comp.visibleRule)}" placeholder="例: order_count > 5"></div>
+  </div>`;
+
+  propPanel.innerHTML = html;
+
+  // 绑定属性输入事件
+  propPanel.querySelectorAll('[data-prop]').forEach(el => {
+    el.addEventListener('input', () => {
+      const prop = el.dataset.prop;
+      let val = el.type === 'checkbox' ? el.checked : el.value;
+      if (prop === 'methodKey') {
+        comp.action.methodKey = val;
+        const m = METHODS.find(m => m.methodKey === val);
+        comp.action.params = m ? [...m.params] : [];
+      } else {
+        comp[prop] = val;
+      }
+      renderCanvas();
+    });
+  });
+
+  // 绑定权限单选
+  propPanel.querySelectorAll('[data-perm]').forEach(el => {
+    el.addEventListener('change', () => {
+      comp.permissions[el.dataset.perm] = el.value;
+      renderCanvas();
+    });
+  });
+}
+
+/* ===== 删除组件 ===== */
+function deleteComponent(id) {
+  schema.layout = schema.layout.filter(c => c.id !== id);
+  if (selectedId === id) selectedId = null;
+  renderCanvas();
+  renderPropPanel();
+}
+
+/* ===== 添加组件到画布 ===== */
+function addComponent(type) {
+  const comp = createComponent(type);
+  schema.layout.push(comp);
+  selectedId = comp.id;
+  renderCanvas();
+  renderPropPanel();
+}
+
+/* ===== 转义工具 ===== */
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+function escapeAttr(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+/* ===== 导出 Schema JSON ===== */
+function buildSchemaJSON() {
+  return {
+    templateId: schema.templateId,
+    templateName: schema.templateName,
+    version: schema.version,
+    layout: schema.layout.map(c => {
+      const o = {
+        id: c.id,
+        type: c.type,
+        label: c.label,
+        fieldKey: c.fieldKey,
+        fieldType: c.fieldType,
+        required: c.required,
+        placeholder: c.placeholder,
+        visibleRule: c.visibleRule,
+        permissions: { ...c.permissions }
+      };
+      if (c.type === 'button' && c.action) {
+        o.action = { methodKey: c.action.methodKey, params: [...c.action.params] };
+      }
+      return o;
+    })
+  };
+}
+
+/* ===== 事件绑定：拖拽 ===== */
+document.querySelectorAll('.comp-item').forEach(item => {
+  item.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', item.dataset.type);
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+  // 点击兜底添加
+  item.addEventListener('click', () => {
+    addComponent(item.dataset.type);
+  });
+});
+
+canvas.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  canvas.classList.add('drag-over');
+});
+canvas.addEventListener('dragleave', () => canvas.classList.remove('drag-over'));
+canvas.addEventListener('drop', (e) => {
+  e.preventDefault();
+  canvas.classList.remove('drag-over');
+  const type = e.dataTransfer.getData('text/plain');
+  if (type) addComponent(type);
+});
+
+/* ===== 顶部按钮 ===== */
+$('#saveTmplBtn').addEventListener('click', () => {
+  showToast('已保存为模板（演示）');
+});
+$('#viewSchemaBtn').addEventListener('click', () => {
+  $('#schemaPre').textContent = JSON.stringify(buildSchemaJSON(), null, 2);
+  $('#schemaModal').classList.add('show');
+});
+$('#closeSchemaBtn').addEventListener('click', () => $('#schemaModal').classList.remove('show'));
+$('#schemaModal').addEventListener('click', (e) => {
+  if (e.target.id === 'schemaModal') $('#schemaModal').classList.remove('show');
+});
+
+/* ===== 模板切换（演示）===== */
+$('#tmplSelect').addEventListener('change', (e) => {
+  if (e.target.value === 'tmpl_002') {
+    schema.templateId = 'tmpl_002';
+    schema.templateName = '售后维修派单表';
+    schema.version = 'v2.1';
+    showToast('已切换到模板：售后维修派单表（演示）');
+  } else {
+    schema.templateId = 'tmpl_001';
+    schema.templateName = '客车采购申请表单';
+    schema.version = 'v1.0';
+    showToast('已切换到模板：客车采购申请表单（演示）');
+  }
+});
+
+/* ===== 初始化：预置 2 个组件，让原型"活"起来 ===== */
+(function init() {
+  // 读取 URL 中的流程上下文
+  const params = new URLSearchParams(location.search);
+  const processId = params.get('processId');
+  if (processId) {
+    const procMap = {
+      'proc_001': '客车采购申请流程',
+      'proc_002': '售后维修派单流程',
+      'proc_003': '员工请假审批流程',
+      'proc_004': '费用报销审批流程'
+    };
+    const name = procMap[processId] || processId;
+    document.getElementById('procCtx').textContent = '📋 当前流程：' + name;
+  }
+
+  const c1 = createComponent('input');
+  c1.label = '客车型号';
+  c1.fieldKey = 'bus_type';
+  c1.fieldType = 'String';
+  c1.required = true;
+  c1.placeholder = '请输入客车型号';
+  c1.permissions = { applicant: 'write', manager: 'readonly', finance: 'readonly' };
+  schema.layout.push(c1);
+
+  const c2 = createComponent('number');
+  c2.label = '采购数量';
+  c2.fieldKey = 'order_count';
+  c2.fieldType = 'Integer';
+  c2.required = true;
+  c2.placeholder = '请输入采购数量';
+  c2.permissions = { applicant: 'write', manager: 'readonly', finance: 'readonly' };
+  schema.layout.push(c2);
+
+  selectedId = c1.id;
+  renderCanvas();
+  renderPropPanel();
+})();
+</script>
+</body>
+</html>

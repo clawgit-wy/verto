@@ -33,7 +33,6 @@
         <a-descriptions-item label="耗时(ms)">{{ viewData.duration }}</a-descriptions-item>
         <a-descriptions-item label="触发用户">{{ viewData.triggerUser }}</a-descriptions-item>
         <a-descriptions-item label="提交SHA">{{ viewData.commitSha }}</a-descriptions-item>
-        <a-descriptions-item label="Node版本">{{ viewData.nodeVersion }}</a-descriptions-item>
         <a-descriptions-item label="技术栈">{{ viewData.techStack }}</a-descriptions-item>
         <a-descriptions-item label="制品版本">{{ viewData.artifactVersion }}</a-descriptions-item>
         <a-descriptions-item label="模板版本">{{ viewData.templateVersion }}</a-descriptions-item>

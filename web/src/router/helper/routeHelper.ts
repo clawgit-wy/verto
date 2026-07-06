@@ -23,6 +23,8 @@ LayoutMap.set('LAYOUT', LAYOUT);
 LayoutMap.set('IFRAME', IFRAME);
 //微前端qiankun
 LayoutMap.set('LayoutsContent', LayoutContent);
+LayoutMap.set('layouts/default/index', LAYOUT);
+LayoutMap.set('layouts/RouteView', LAYOUT);
 
 let dynamicViewsModules: Record<string, () => Promise<Recordable>>;
 
@@ -86,7 +88,7 @@ function asyncImportRoute(routes: AppRouteRecordRaw[] | undefined) {
     let { component, name } = item;
     const { children } = item;
     if (component) {
-      const layoutFound = LayoutMap.get(component.toUpperCase());
+      const layoutFound = LayoutMap.get(component) || LayoutMap.get(component.toUpperCase());
       if (layoutFound) {
         item.component = layoutFound;
       } else {
@@ -141,8 +143,9 @@ export function transformObjToRoute<T = AppRouteModule>(routeList: AppRouteModul
     const component = route.component as string;
     if (component) {
       route.originComponent = component;
-      if (component.toUpperCase() === 'LAYOUT') {
-        route.component = LayoutMap.get(component.toUpperCase());
+      const layoutFound = LayoutMap.get(component) || LayoutMap.get(component.toUpperCase());
+      if (layoutFound) {
+        route.component = layoutFound;
       } else {
         route.children = [cloneDeep(route)];
         route.component = LAYOUT;
@@ -236,12 +239,12 @@ export function addSlashToRouteComponent(routeList: AppRouteRecordRaw[]) {
   routeList.forEach((route) => {
     let component = route.component as string;
     if (component) {
-      const layoutFound = LayoutMap.get(component);
+      const layoutFound = LayoutMap.get(component) || LayoutMap.get(component.toUpperCase());
       if (!layoutFound) {
         route.component = component.startsWith('/') ? component : `/${component}`;
       }
     }
     route.children && addSlashToRouteComponent(route.children);
   });
-  return routeList as unknown as T[];
+  return routeList;
 }

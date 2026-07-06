@@ -45,12 +45,9 @@ public class FePipeline implements Serializable {
     private String env;
 
     @Schema(description = "技术栈ID")
-    private String techStackId;
+  private String techStackId;
 
-    @Schema(description = "Node版本ID")
-    private String nodeVersionId;
-
-    @Excel(name = "检查级别", width = 15)
+  @Excel(name = "检查级别", width = 15)
     @Dict(dicCode = "fe_check_level")
     @Schema(description = "检查级别: strict=严格, standard=标准, loose=宽松")
     private String checkLevel;
