@@ -1,0 +1,16 @@
+export default {
+    colorPicker: 'value',
+    autoComplete: 'value',
+    cascader: 'value',
+    dynamicTags: 'value',
+    inputNumber: 'value',
+    timePicker: 'formattedValue',
+    rate: 'value',
+    slider: 'value',
+    treeSelect: 'value',
+    switch: 'value',
+    transfer: 'value',
+    mention: 'value',
+    inputOtp: 'value',
+    dynamicInput: 'value',
+}

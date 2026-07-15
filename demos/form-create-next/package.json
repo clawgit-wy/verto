@@ -1,0 +1,55 @@
+{
+    "name": "form-create",
+    "private": true,
+    "description": "FormCreate 低代码表单渲染器，通过 JSON 数据驱动表单渲染（Vue 3）",
+    "scripts": {
+        "component:build": "pnpm -r --filter \"./components/**\" run build:component:vite",
+        "lib:build": "pnpm -r --filter \"./packages/**\" run build:lib",
+        "build": "pnpm run component:build && pnpm run lib:build",
+        "dev:ele": "pnpm --filter @form-create/element-ui run dev:ele",
+        "dev:antdv": "pnpm --filter @form-create/ant-design-vue run dev:antdv",
+        "dev:antdv-next": "pnpm --filter @form-create/antdv-next run dev:antdv-next",
+        "dev:td": "pnpm --filter @form-create/tdesign run dev:td",
+        "dev:arco": "pnpm --filter @form-create/arco-design run dev:arco",
+        "dev:naive": "pnpm --filter @form-create/naive-ui run dev:naive",
+        "dev:vant": "pnpm --filter @form-create/vant run dev:vant",
+        "dev:tiny": "pnpm --filter @form-create/tiny-vue run dev:tiny",
+        "commit": "git cz",
+        "lint": "eslint *.js",
+        "clear:package": "rimraf packages/*/node_modules packages/*/package-lock.json packages/*/pnpm-lock.yaml",
+        "clear:component": "rimraf components/*/*/node_modules components/*/*/package-lock.json components/*/*/pnpm-lock.yaml",
+        "clear:dist": "rimraf packages/*/dist components/*/*/dist",
+        "clear:self": "rimraf ./package-lock.json ./pnpm-lock.yaml ./node_modules",
+        "clear:all": "pnpm run clear:dist && pnpm run clear:package && pnpm run clear:component && pnpm run clear:self",
+        "preinstall": "npx only-allow pnpm",
+        "bootstrap": "pnpm i"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^5.2.4",
+        "@vitejs/plugin-vue-jsx": "^4.2.0",
+        "commitizen": "^4.3.0",
+        "cross-env": "^7.0.3",
+        "cz-conventional-changelog": "^3.3.0",
+        "cz-customizable": "^7.0.0",
+        "eslint": "^8.57.0",
+        "eslint-plugin-vue": "^9.27.0",
+        "husky": "^9.1.6",
+        "lerna": "^8.1.8",
+        "lint-staged": "^15.2.10",
+        "npm-run-all": "^4.1.5",
+        "rimraf": "^6.0.1",
+        "vite": "^5.4.21",
+        "vite-plugin-banner": "^0.8.0",
+        "vite-plugin-css-injected-by-js": "^3.5.2"
+    },
+    "config": {
+        "commitizen": {
+            "path": "./node_modules/cz-customizable"
+        }
+    },
+    "lint-staged": {
+        "*.{js,jsx,vue}": [
+            "eslint --fix"
+        ]
+    }
+}

@@ -36,6 +36,14 @@
 			<artifactId>jeecg-boot-module-feplatform</artifactId>
 			<version>${jeecgboot.version}</version>
 		</dependency>
+		<!-- update-begin-author:formengine -date:2026-07-08  for：【表单引擎】引入表单引擎子模块 -->
+		<!-- 表单引擎与流程仿真测试工作台模块-->
+		<dependency>
+			<groupId>org.jeecgframework.boot3</groupId>
+			<artifactId>jeecg-boot-module-form-engine</artifactId>
+			<version>${jeecgboot.version}</version>
+		</dependency>
+		<!-- update-end-author:formengine -date:2026-07-08  for：【表单引擎】引入表单引擎子模块 -->
 		<!-- 企业微信/钉钉 api -->
 		<dependency>
 			<groupId>org.jeecgframework</groupId>

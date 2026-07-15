@@ -53,7 +53,9 @@ spring:
     jdbc:
       initialize-schema: embedded
     #定时任务启动开关，true-开  false-关
-    auto-startup: true
+    #update-begin---author:formengine ---date:2026-07-08  for：【Quartz】开发环境QRTZ表暂未初始化，关闭Quartz自动启动以保证服务正常启动###
+    auto-startup: false
+    #update-end---author:formengine ---date:2026-07-08  for：【Quartz】开发环境QRTZ表暂未初始化，关闭Quartz自动启动以保证服务正常启动###
     #延迟1秒启动定时任务
     startup-delay: 1s
     #启动时更新己存在的Job
@@ -151,10 +153,12 @@ spring:
           slow-sql-millis: 5000
       datasource:
         master:
-          url: jdbc:mysql://175.178.158.23:33306/verto_test?characterEncoding=UTF-8&useUnicode=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-          username: verto_test
-          password: 5jae3bptBtc4LKxh
+          #update-begin---author:formengine ---date:2026-07-08  for：【数据库回切】主数据源从PostgreSQL切换回本地MySQL8.0实例（Docker infra-pool-mysql80）###
+          url: jdbc:mysql://127.0.0.1:3306/jeecg_boot?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true
+          username: root
+          password: m80
           driver-class-name: com.mysql.cj.jdbc.Driver
+          #update-end---author:formengine ---date:2026-07-08  for：【数据库回切】主数据源从PostgreSQL切换回本地MySQL8.0实例（Docker infra-pool-mysql80）###
 #        # shardingjdbc数据源
 #        sharding-db:
 #          driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
@@ -165,7 +169,9 @@ spring:
       database: 0
       host: 127.0.0.1
       port: 6379
-      password:
+      #update-begin---author:formengine ---date:2026-07-08  for：【Redis认证】本地Redis容器(infra-pool-redis)需密码认证###
+      password: r26
+      #update-end---author:formengine ---date:2026-07-08  for：【Redis认证】本地Redis容器(infra-pool-redis)需密码认证###
 #mybatis plus 设置
 mybatis-plus:
   mapper-locations: classpath*:org/jeecg/**/xml/*Mapper.xml
@@ -285,7 +291,7 @@ jeecg:
     #webapp文件路径
     webapp: /opt/webapp
   shiro:
-    excludeUrls: /test/jeecgDemo/demo3,/test/jeecgDemo/redisDemo/**,/bigscreen/category/**,/bigscreen/visual/**,/bigscreen/map/**,/jmreport/bigscreen2/**,/feplatform/webhook/**
+    excludeUrls: /test/jeecgDemo/demo3,/test/jeecgDemo/redisDemo/**,/bigscreen/category/**,/bigscreen/visual/**,/bigscreen/map/**,/jmreport/bigscreen2/**,/feplatform/webhook/**,/formengine/**
   # 短信发送方式 aliyun阿里云短信 tencent腾讯云短信
   smsSendType: aliyun
   #阿里云oss存储和大鱼短信秘钥配置
@@ -354,7 +360,9 @@ jeecg:
   #分布式锁配置
   redisson:
     address: 127.0.0.1:6379
-    password:
+    #update-begin---author:formengine ---date:2026-07-08  for：【Redis认证】本地Redis容器(infra-pool-redis)需密码认证###
+    password: r26
+    #update-end---author:formengine ---date:2026-07-08  for：【Redis认证】本地Redis容器(infra-pool-redis)需密码认证###
     type: STANDALONE
     enabled: true
   # 百度开放API配置

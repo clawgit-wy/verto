@@ -1,0 +1,11 @@
+.form-create {
+    width: 100%;
+}
+
+.form-create.is-preview .fc-clock, .form-create .fc-none, .form-create.is-preview .n-form-item .n-form-item-label .n-form-item-label__asterisk {
+    display: none !important;
+}
+
+.fc-form-footer {
+    margin-top: 12px;
+}

@@ -73,3 +73,8 @@ export const ERROR_LOG_ROUTE: AppRouteRecordRaw = {
     },
   ],
 };
+
+// update-begin---author:formengine ---date:2026-07-08  for：【表单引擎】路由改为DB菜单驱动，移除全屏免登录路由（避免与菜单路由冲突导致整页刷新）---
+// 表单引擎菜单已迁移至 sys_permission 表（V06__formengine_menu_mysql.sql），
+// 由后端菜单接口动态生成带 LAYOUT 的路由，解决全屏路由导致的整页刷新问题。
+// update-end---author:formengine ---date:2026-07-08  for：【表单引擎】路由改为DB菜单驱动，移除全屏免登录路由（避免与菜单路由冲突导致整页刷新）---

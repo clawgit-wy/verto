@@ -16,6 +16,9 @@
         <module>jeecg-module-demo</module>
         <module>jeecg-boot-module-airag</module>
         <module>jeecg-boot-module-feplatform</module>
+        <!-- update-begin-author:formengine -date:2026-07-08  for：【表单引擎】新增表单引擎子模块 -->
+        <module>jeecg-boot-module-form-engine</module>
+        <!-- update-end-author:formengine -date:2026-07-08  for：【表单引擎】新增表单引擎子模块 -->
     </modules>
 
 
